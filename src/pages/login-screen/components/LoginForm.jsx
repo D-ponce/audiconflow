@@ -1,201 +1,183 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
-import { Checkbox } from '../../../components/ui/Checkbox';
-import Icon from '../../../components/AppIcon';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Button from "components/ui/Button";
+import Input from "components/ui/Input";
+import { Checkbox } from "components/ui/Checkbox";
+import Icon from "components/AppIcon";
+
+// Credenciales únicas permitidas
+const validUsers = {
+  auditor: {
+    email: "auditor@audiconflow.com",
+    password: "auditor123",
+    role: "auditor",
+  },
+  supervisor: {
+    email: "supervisor@audiconflow.com",
+    password: "supervisor123",
+    role: "supervisor",
+  },
+  administrador: {
+    email: "admin@audiconflow.com",
+    password: "admin123",
+    role: "administrador",
+  },
+};
+
+const normalize = (value = "") => value.trim().toLowerCase();
 
 const LoginForm = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    rememberSession: false
+    user: "",
+    password: "",
+    rememberSession: false,
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock credentials for authentication
-  const mockCredentials = {
-    admin: { email: "admin@audiconflow.com", password: "admin123" },
-    auditor: { email: "auditor@audiconflow.com", password: "auditor123" },
-    manager: { email: "manager@audiconflow.com", password: "manager123" }
-  };
+  const setFieldError = (name, msg) =>
+    setErrors((prev) => ({ ...prev, [name]: msg }));
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+    if (errors[name]) setFieldError(name, "");
   };
 
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.email) {
-      newErrors.email = 'El correo electrónico es requerido';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Formato de correo electrónico inválido';
+
+    if (!formData.user) {
+      newErrors.user = "Debes ingresar tu usuario (correo o rol)";
     }
-    
+
     if (!formData.password) {
-      newErrors.password = 'La contraseña es requerida';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+      newErrors.password = "Debes ingresar tu contraseña";
     }
-    
-    return newErrors;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
+  const authenticate = (inputUser, inputPass) => {
+    const userKey = normalize(inputUser);
+
+    // Comparar por rol directo
+    if (
+      validUsers[userKey] &&
+      validUsers[userKey].password === inputPass
+    ) {
+      return validUsers[userKey];
     }
-    
+
+    // Comparar por email
+    const match = Object.values(validUsers).find(
+      (u) => normalize(u.email) === userKey && u.password === inputPass
+    );
+
+    return match || null;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
     setIsLoading(true);
-    
-    // Simulate API call delay
+
     setTimeout(() => {
-      // Check against mock credentials
-      const isValidCredentials = Object.values(mockCredentials).some(
-        cred => cred.email === formData.email && cred.password === formData.password
-      );
-      
-      if (isValidCredentials) {
-        // Store session data
-        if (formData.rememberSession) {
-          localStorage.setItem('audiconflow_session', JSON.stringify({
-            email: formData.email,
-            loginTime: new Date().toISOString()
-          }));
-        }
-        
-        // Redirect to dashboard
-        navigate('/dashboard');
+      const userData = authenticate(formData.user, formData.password);
+      if (userData) {
+        const session = {
+          email: userData.email,
+          role: userData.role,
+          loginTime: new Date().toISOString(),
+        };
+        localStorage.setItem("audiconflow_session", JSON.stringify(session));
+        navigate("/dashboard");
       } else {
         setErrors({
-          general: 'Credenciales inválidas. Use: admin@audiconflow.com / admin123'
+          general:
+            "Credenciales inválidas. Usa uno de los roles: auditor, supervisor, administrador.",
         });
       }
-      
       setIsLoading(false);
-    }, 1500);
-  };
-
-  const handleForgotPassword = () => {
-    alert('Funcionalidad de recuperación de contraseña próximamente disponible');
+    }, 600);
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-card rounded-xl shadow-lg p-8 border border-border">
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center w-16 h-16 bg-primary rounded-xl mx-auto mb-4">
-          <Icon name="AudioWaveform" size={32} color="white" />
-        </div>
-        <h1 className="text-2xl font-semibold text-foreground mb-2">
-          Bienvenido a AudiconFlow
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Inicia sesión para acceder a tu plataforma de auditoría
-        </p>
-      </div>
-
-      {errors.general && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <Icon name="AlertCircle" size={16} color="#DC2626" />
-            <p className="text-sm text-red-600">{errors.general}</p>
+    <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-8 w-full max-w-md mx-auto">
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="text-center mb-6">
+          <div className="mx-auto h-12 w-12 rounded-xl bg-primary/10 grid place-items-center">
+            <Icon name="ShieldCheck" className="h-6 w-6 text-primary" />
           </div>
+          <h1 className="mt-3 text-2xl font-semibold">AudiconFlow</h1>
+          <p className="text-sm text-muted-foreground">Acceso autorizado</p>
         </div>
-      )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Input
-          label="Correo Electrónico"
-          type="email"
-          name="email"
-          placeholder="ejemplo@empresa.com"
-          value={formData.email}
-          onChange={handleInputChange}
-          error={errors.email}
-          required
-          className="w-full"
-        />
-
-        <Input
-          label="Contraseña"
-          type="password"
-          name="password"
-          placeholder="Ingresa tu contraseña"
-          value={formData.password}
-          onChange={handleInputChange}
-          error={errors.password}
-          required
-          className="w-full"
-        />
-
-        <div className="flex items-center justify-between">
-          <Checkbox
-            label="Recordar sesión"
-            checked={formData.rememberSession}
+        <div className="space-y-4">
+          <Input
+            label="Usuario"
+            name="user"
+            placeholder="Correo o rol (auditor | supervisor | administrador)"
+            value={formData.user}
             onChange={handleInputChange}
-            name="rememberSession"
-            size="sm"
+            error={errors.user}
+            required
+            aria-invalid={Boolean(errors.user)}
           />
-          
-          <button
-            type="button"
-            onClick={handleForgotPassword}
-            className="text-sm text-primary hover:text-primary/80 transition-colors"
+
+          <Input
+            label="Contraseña"
+            type="password"
+            name="password"
+            placeholder="Ingresa tu contraseña"
+            value={formData.password}
+            onChange={handleInputChange}
+            error={errors.password}
+            required
+            aria-invalid={Boolean(errors.password)}
+          />
+
+          <div className="flex items-center justify-between">
+            <Checkbox
+              label="Recordar sesión"
+              checked={formData.rememberSession}
+              onChange={handleInputChange}
+              name="rememberSession"
+            />
+          </div>
+
+          {errors.general && (
+            <div
+              className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3"
+              role="alert"
+            >
+              {errors.general}
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full"
+            loading={isLoading}
+            aria-busy={isLoading}
           >
-            ¿Olvidaste tu contraseña?
-          </button>
+            Ingresar
+          </Button>
         </div>
-
-        <Button
-          type="submit"
-          variant="default"
-          size="lg"
-          fullWidth
-          loading={isLoading}
-          disabled={isLoading}
-          className="mt-8"
-        >
-          {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-        </Button>
       </form>
-
-      <div className="mt-8 text-center">
-        <p className="text-sm text-muted-foreground">
-          ¿Necesitas una cuenta?{' '}
-          <button
-            onClick={() => alert('Registro próximamente disponible')}
-            className="text-primary hover:text-primary/80 font-medium transition-colors"
-          >
-            Contacta al administrador
-          </button>
-        </p>
-      </div>
 
       <div className="mt-6 pt-6 border-t border-border">
         <div className="text-xs text-muted-foreground text-center space-y-1">
-          <p className="font-medium">Credenciales de prueba:</p>
-          <p>Admin: admin@audiconflow.com / admin123</p>
-          <p>Auditor: auditor@audiconflow.com / auditor123</p>
-          <p>Manager: manager@audiconflow.com / manager123</p>
+          <p className="font-medium">Usuarios válidos:</p>
+          <p>auditor / auditor123 — auditor@audiconflow.com</p>
+          <p>supervisor / supervisor123 — supervisor@audiconflow.com</p>
+          <p>administrador / admin123 — admin@audiconflow.com</p>
         </div>
       </div>
     </div>
