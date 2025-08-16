@@ -4,7 +4,7 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import UserTable from './components/UserTable';
 import UserForm from './components/UserForm';
-import RolePermissionMatrix from './components/RolePermissionMatrix';
+import RolePermissionMatrix from './components/RolePermissionMatrixPage';
 import UserActivityLog from './components/UserActivityLog';
 import UserStats from './components/UserStats';
 
@@ -21,7 +21,7 @@ const UserManagement = () => {
       email: 'maria.gonzalez@empresa.com',
       role: 'Administrador',
       department: 'Auditoría',
-      phone: '+34 600 123 456',
+      phone: '+569 5123 4568',
       status: 'Activo',
       lastLogin: new Date(Date.now() - 1000 * 60 * 30),
       createdAt: '2024-01-15',
@@ -33,7 +33,7 @@ const UserManagement = () => {
       email: 'carlos.rodriguez@empresa.com',
       role: 'Auditor Senior',
       department: 'Auditoría',
-      phone: '+34 600 234 567',
+      phone: '+569 0023 4567',
       status: 'Activo',
       lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 2),
       createdAt: '2024-02-20',
@@ -45,7 +45,7 @@ const UserManagement = () => {
       email: 'ana.martinez@empresa.com',
       role: 'Auditor',
       department: 'Operaciones',
-      phone: '+34 600 345 678',
+      phone: '+569 7890 6788',
       status: 'Activo',
       lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 4),
       createdAt: '2024-03-10',

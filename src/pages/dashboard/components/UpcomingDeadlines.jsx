@@ -5,7 +5,7 @@ const UpcomingDeadlines = () => {
   const deadlines = [
     {
       id: 1,
-      title: 'Auditoría Sucursal Centro',
+      title: 'Auditoría Revisión de Usuarios Oracle',
       dueDate: '2025-07-15T09:00:00',
       priority: 'high',
       assignee: 'María González',
@@ -13,7 +13,7 @@ const UpcomingDeadlines = () => {
     },
     {
       id: 2,
-      title: 'Reporte Mensual Q2',
+      title: 'Auditoría Revisión de Usuarios SAP',
       dueDate: '2025-07-18T17:00:00',
       priority: 'medium',
       assignee: 'Carlos Rodríguez',
@@ -21,7 +21,7 @@ const UpcomingDeadlines = () => {
     },
     {
       id: 3,
-      title: 'Revisión Inventario Almacén',
+      title: 'Revisión Stock',
       dueDate: '2025-07-20T14:00:00',
       priority: 'low',
       assignee: 'Ana Martínez',
@@ -29,7 +29,7 @@ const UpcomingDeadlines = () => {
     },
     {
       id: 4,
-      title: 'Auditoría Zona Norte',
+      title: 'Auditoría revión de precios',
       dueDate: '2025-07-22T10:30:00',
       priority: 'medium',
       assignee: 'Luis Fernández',

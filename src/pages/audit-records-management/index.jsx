@@ -1,361 +1,266 @@
-import React, { useState, useEffect } from 'react';
-import Header from '../../components/ui/Header';
-import AuditFilters from './components/AuditFilters';
-import AuditTable from './components/AuditTable';
-import AuditDetailModal from './components/AuditDetailModal';
-import ActionButtons from './components/ActionButtons';
-import Pagination from './components/Pagination';
+import React, { useEffect, useMemo, useState } from "react";
+import Icon from "components/AppIcon";
+import Button from "components/ui/Button";
+import AdvancedFilters from "./components/AdvancedFilters";
+import AuditTable from "./components/AuditTable";
 
-const AuditRecordsManagement = () => {
-  const [auditRecords, setAuditRecords] = useState([]);
-  const [filteredRecords, setFilteredRecords] = useState([]);
-  const [selectedRecords, setSelectedRecords] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
-  const [sortConfig, setSortConfig] = useState({ field: 'startDate', direction: 'desc' });
-  const [selectedAudit, setSelectedAudit] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+/**
+ * Página: Gestión de Auditorías
+ * Ruta esperada: /audit-records-management
+ *
+ * Dependencias internas:
+ *  - ./components/AdvancedFilters.jsx  (ya te la dejé corregida)
+ *  - ./components/AuditTable.jsx       (ya te la dejé completa)
+ */
+
+export default function AuditRecordsManagement() {
+  // Dataset base (podrías reemplazar por fetch a tu API)
+  const [audits, setAudits] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Filtros aplicados desde <AdvancedFilters />
   const [filters, setFilters] = useState({
-    search: '',
-    location: '',
-    auditor: '',
-    status: '',
-    dateRange: { start: '', end: '' }
+    dateRange: { start: "", end: "", preset: "last30days" },
+    locations: [],
+    auditTypes: [],
+    auditStatus: [],
+    auditors: [],
+    complianceScore: { min: 0, max: 100 },
+    riskLevel: [],
+    departments: [],
+    customFields: {},
   });
 
-  // Mock audit records data
-  const mockAuditRecords = [
-    {
-      id: 1,
-      auditId: 'AUD-2025-001',
-      location: 'Madrid Centro',
-      auditor: 'María García',
-      status: 'completada',
-      startDate: '2025-07-10T09:00:00',
-      completionDate: '2025-07-11T17:30:00',
-      complianceScore: 92
-    },
-    {
-      id: 2,
-      auditId: 'AUD-2025-002',
-      location: 'Barcelona Eixample',
-      auditor: 'Carlos Rodríguez',
-      status: 'en-progreso',
-      startDate: '2025-07-11T08:30:00',
-      completionDate: null,
-      complianceScore: 0
-    },
-    {
-      id: 3,
-      auditId: 'AUD-2025-003',
-      location: 'Valencia Centro',
-      auditor: 'Ana Martínez',
-      status: 'pendiente',
-      startDate: '2025-07-15T10:00:00',
-      completionDate: null,
-      complianceScore: 0
-    },
-    {
-      id: 4,
-      auditId: 'AUD-2025-004',
-      location: 'Sevilla Triana',
-      auditor: 'David López',
-      status: 'completada',
-      startDate: '2025-07-08T09:15:00',
-      completionDate: '2025-07-09T16:45:00',
-      complianceScore: 88
-    },
-    {
-      id: 5,
-      auditId: 'AUD-2025-005',
-      location: 'Bilbao Casco Viejo',
-      auditor: 'Laura Sánchez',
-      status: 'revision',
-      startDate: '2025-07-09T11:00:00',
-      completionDate: '2025-07-10T18:20:00',
-      complianceScore: 95
-    },
-    {
-      id: 6,
-      auditId: 'AUD-2025-006',
-      location: 'Madrid Centro',
-      auditor: 'María García',
-      status: 'archivada',
-      startDate: '2025-07-05T08:00:00',
-      completionDate: '2025-07-06T17:00:00',
-      complianceScore: 85
-    },
-    {
-      id: 7,
-      auditId: 'AUD-2025-007',
-      location: 'Barcelona Eixample',
-      auditor: 'Carlos Rodríguez',
-      status: 'completada',
-      startDate: '2025-07-07T09:30:00',
-      completionDate: '2025-07-08T16:15:00',
-      complianceScore: 91
-    },
-    {
-      id: 8,
-      auditId: 'AUD-2025-008',
-      location: 'Valencia Centro',
-      auditor: 'Ana Martínez',
-      status: 'en-progreso',
-      startDate: '2025-07-12T10:30:00',
-      completionDate: null,
-      complianceScore: 0
-    }
-  ];
-
+  // Simulación de carga de datos (reemplaza con tu fetch real)
   useEffect(() => {
-    setAuditRecords(mockAuditRecords);
-    setFilteredRecords(mockAuditRecords);
+    setLoading(true);
+    const mock = [
+      {
+        id: "A-1001",
+        title: "Revisión de Usuarios Oracle",
+        area: "TI",
+        auditor: "María González",
+        status: "En curso",
+        severity: "Alta",
+        createdAt: "2025-07-01",
+        dueAt: "2025-07-15",
+        findings: 5,
+        location: "casa_matriz",
+        auditType: "contabilidad_usuarios",
+        risk: "high",
+        department: "it",
+        compliance: 72,
+      },
+      {
+        id: "A-1002",
+        title: "Caja diaria sucursal Centro",
+        area: "Finanzas",
+        auditor: "José Ruiz",
+        status: "Cerrada",
+        severity: "Media",
+        createdAt: "2025-06-20",
+        dueAt: "2025-06-25",
+        findings: 2,
+        location: "local_s",
+        auditType: "finanzas_precios",
+        risk: "low",
+        department: "finance",
+        compliance: 94,
+      },
+      {
+        id: "A-1003",
+        title: "Stock bodega CD Sur",
+        area: "Operaciones",
+        auditor: "Ana Martín",
+        status: "Pendiente",
+        severity: "Baja",
+        createdAt: "2025-07-05",
+        dueAt: "2025-07-28",
+        findings: 0,
+        location: "cd_s",
+        auditType: "finanzas_stock",
+        risk: "medium",
+        department: "inventory",
+        compliance: 88,
+      },
+    ];
+    const t = setTimeout(() => {
+      setAudits(mock);
+      setLoading(false);
+    }, 250);
+    return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [filters, auditRecords]);
+  // Aplicación de filtros básicos al dataset
+  const filteredData = useMemo(() => {
+    let rows = audits;
 
-  const applyFilters = () => {
-    let filtered = [...auditRecords];
+    // Fecha: usamos createdAt contra preset/start/end
+    const { preset, start, end } = filters.dateRange || {};
+    const now = new Date();
 
-    // Search filter
-    if (filters.search) {
-      const searchTerm = filters.search.toLowerCase();
-      filtered = filtered.filter(record =>
-        record.auditId.toLowerCase().includes(searchTerm) ||
-        record.location.toLowerCase().includes(searchTerm) ||
-        record.auditor.toLowerCase().includes(searchTerm)
-      );
-    }
+    const presetToRange = () => {
+      if (preset === "today") {
+        const d0 = new Date();
+        const d1 = new Date();
+        return [d0, d1];
+      }
+      if (preset === "last7days") {
+        const d0 = new Date(now);
+        d0.setDate(d0.getDate() - 6);
+        return [d0, now];
+      }
+      if (preset === "last30days") {
+        const d0 = new Date(now);
+        d0.setDate(d0.getDate() - 29);
+        return [d0, now];
+      }
+      if (preset === "last90days") {
+        const d0 = new Date(now);
+        d0.setDate(d0.getDate() - 89);
+        return [d0, now];
+      }
+      if (preset === "thisMonth") {
+        const d0 = new Date(now.getFullYear(), now.getMonth(), 1);
+        return [d0, now];
+      }
+      if (preset === "lastMonth") {
+        const d0 = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const d1 = new Date(now.getFullYear(), now.getMonth(), 0);
+        return [d0, d1];
+      }
+      if (preset === "thisQuarter") {
+        const q = Math.floor(now.getMonth() / 3);
+        const d0 = new Date(now.getFullYear(), q * 3, 1);
+        return [d0, now];
+      }
+      if (preset === "custom" && start && end) {
+        return [new Date(start), new Date(end)];
+      }
+      return null;
+    };
 
-    // Location filter
-    if (filters.location) {
-      filtered = filtered.filter(record => record.location === filters.location);
-    }
-
-    // Auditor filter
-    if (filters.auditor) {
-      filtered = filtered.filter(record => record.auditor === filters.auditor);
-    }
-
-    // Status filter
-    if (filters.status) {
-      filtered = filtered.filter(record => record.status === filters.status);
-    }
-
-    // Date range filter
-    if (filters.dateRange.start || filters.dateRange.end) {
-      filtered = filtered.filter(record => {
-        const recordDate = new Date(record.startDate);
-        const startDate = filters.dateRange.start ? new Date(filters.dateRange.start) : null;
-        const endDate = filters.dateRange.end ? new Date(filters.dateRange.end) : null;
-
-        if (startDate && endDate) {
-          return recordDate >= startDate && recordDate <= endDate;
-        } else if (startDate) {
-          return recordDate >= startDate;
-        } else if (endDate) {
-          return recordDate <= endDate;
-        }
-        return true;
+    const range = presetToRange();
+    if (range) {
+      const [d0, d1] = range;
+      const d1End = new Date(d1);
+      d1End.setHours(23, 59, 59, 999);
+      rows = rows.filter((r) => {
+        const c = new Date(r.createdAt);
+        return c >= d0 && c <= d1End;
       });
     }
 
-    // Apply sorting
-    filtered.sort((a, b) => {
-      const aValue = a[sortConfig.field];
-      const bValue = b[sortConfig.field];
+    // Multi-filtros (si están marcados)
+    if (filters.locations?.length) {
+      rows = rows.filter((r) => filters.locations.includes(r.location));
+    }
+    if (filters.auditTypes?.length) {
+      rows = rows.filter((r) => filters.auditTypes.includes(r.auditType));
+    }
+    if (filters.auditStatus?.length) {
+      rows = rows.filter((r) => filters.auditStatus.includes(r.statusKey ?? r.status));
+    }
+    if (filters.auditors?.length) {
+      rows = rows.filter((r) => filters.auditors.includes(slugify(r.auditor)));
+    }
+    if (filters.riskLevel?.length) {
+      rows = rows.filter((r) => filters.riskLevel.includes(r.risk));
+    }
+    if (filters.departments?.length) {
+      rows = rows.filter((r) => filters.departments.includes(r.department));
+    }
 
-      if (sortConfig.field === 'startDate' || sortConfig.field === 'completionDate') {
-        const aDate = aValue ? new Date(aValue) : new Date(0);
-        const bDate = bValue ? new Date(bValue) : new Date(0);
-        return sortConfig.direction === 'asc' ? aDate - bDate : bDate - aDate;
-      }
-
-      if (typeof aValue === 'string') {
-        return sortConfig.direction === 'asc' 
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
-
-      return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+    // Rango de cumplimiento (0–100)
+    const min = Number(filters.complianceScore?.min ?? 0);
+    const max = Number(filters.complianceScore?.max ?? 100);
+    rows = rows.filter((r) => {
+      const c = Number(r.compliance ?? 0);
+      return c >= min && c <= max;
     });
 
-    setFilteredRecords(filtered);
-    setCurrentPage(1);
-  };
+    return rows;
+  }, [audits, filters]);
 
-  const handleFilterChange = (filterType, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterType]: value
-    }));
-  };
-
-  const handleSearch = (searchTerm) => {
-    setFilters(prev => ({
-      ...prev,
-      search: searchTerm
-    }));
-  };
-
-  const handleClearFilters = () => {
+  const handleApplyFilters = (f) => setFilters(f);
+  const handleResetFilters = () =>
     setFilters({
-      search: '',
-      location: '',
-      auditor: '',
-      status: '',
-      dateRange: { start: '', end: '' }
+      dateRange: { start: "", end: "", preset: "last30days" },
+      locations: [],
+      auditTypes: [],
+      auditStatus: [],
+      auditors: [],
+      complianceScore: { min: 0, max: 100 },
+      riskLevel: [],
+      departments: [],
+      customFields: {},
     });
-  };
 
-  const handleSelectRecord = (recordId, isSelected) => {
-    if (isSelected) {
-      setSelectedRecords(prev => [...prev, recordId]);
-    } else {
-      setSelectedRecords(prev => prev.filter(id => id !== recordId));
-    }
+  const handleDeleteMany = async (ids) => {
+    // Si más adelante conectas API, haz el DELETE aquí
+    setAudits((prev) => prev.filter((r) => !ids.includes(r.id)));
   };
-
-  const handleSelectAll = (isSelected) => {
-    if (isSelected) {
-      const currentPageRecords = getCurrentPageRecords().map(record => record.id);
-      setSelectedRecords(currentPageRecords);
-    } else {
-      setSelectedRecords([]);
-    }
-  };
-
-  const handleSort = (newSortConfig) => {
-    setSortConfig(newSortConfig);
-  };
-
-  const handleViewDetails = (audit) => {
-    setSelectedAudit(audit);
-    setIsDetailModalOpen(true);
-  };
-
-  const handleEditRecord = (audit) => {
-    console.log('Editar auditoría:', audit.auditId);
-    // Implement edit functionality
-  };
-
-  const handleDuplicateRecord = (audit) => {
-    console.log('Duplicar auditoría:', audit.auditId);
-    // Implement duplicate functionality
-  };
-
-  const handleArchiveRecord = (audit) => {
-    console.log('Archivar auditoría:', audit.auditId);
-    // Implement archive functionality
-  };
-
-  const handleNewAudit = () => {
-    console.log('Crear nueva auditoría');
-    // Implement new audit functionality
-  };
-
-  const handleExportData = () => {
-    console.log('Exportar datos');
-    // Implement export functionality
-  };
-
-  const handleScheduleAudit = () => {
-    console.log('Programar auditoría');
-    // Implement schedule functionality
-  };
-
-  const handleBulkArchive = () => {
-    console.log('Archivar seleccionados:', selectedRecords);
-    setSelectedRecords([]);
-  };
-
-  const handleBulkDelete = () => {
-    console.log('Eliminar seleccionados:', selectedRecords);
-    setSelectedRecords([]);
-  };
-
-  const getCurrentPageRecords = () => {
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredRecords.slice(startIndex, endIndex);
-  };
-
-  const totalPages = Math.ceil(filteredRecords.length / pageSize);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main className="pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Gestión de Registros de Auditoría
-            </h1>
-            <p className="text-muted-foreground">
-              Administra y supervisa todos los registros de auditoría de tus ubicaciones retail
+    <div className="space-y-6">
+      {/* Encabezado */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Icon name="FileText" className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold">Gestión de Auditorías</h1>
+            <p className="text-sm text-muted-foreground">
+              Visualiza, filtra y exporta auditorías. Usa los filtros avanzados para acotar el rango de fechas, ubicación y tipo.
             </p>
           </div>
-
-          {/* Filters */}
-          <AuditFilters
-            onFilterChange={handleFilterChange}
-            onSearch={handleSearch}
-            onClearFilters={handleClearFilters}
-          />
-
-          {/* Action Buttons */}
-          <ActionButtons
-            selectedCount={selectedRecords.length}
-            onNewAudit={handleNewAudit}
-            onExportData={handleExportData}
-            onScheduleAudit={handleScheduleAudit}
-            onBulkArchive={handleBulkArchive}
-            onBulkDelete={handleBulkDelete}
-          />
-
-          {/* Audit Table */}
-          <AuditTable
-            auditRecords={getCurrentPageRecords()}
-            selectedRecords={selectedRecords}
-            onSelectRecord={handleSelectRecord}
-            onSelectAll={handleSelectAll}
-            onSort={handleSort}
-            sortConfig={sortConfig}
-            onViewDetails={handleViewDetails}
-            onEditRecord={handleEditRecord}
-            onDuplicateRecord={handleDuplicateRecord}
-            onArchiveRecord={handleArchiveRecord}
-          />
-
-          {/* Pagination */}
-          {filteredRecords.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalRecords={filteredRecords.length}
-              pageSize={pageSize}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
-            />
-          )}
         </div>
-      </main>
+        <div className="flex gap-2">
+          <Button variant="primary" iconName="Plus">
+            Nueva auditoría
+          </Button>
+          <Button variant="ghost" iconName="RefreshCcw" onClick={() => window.location.reload()}>
+            Actualizar
+          </Button>
+        </div>
+      </div>
 
-      {/* Detail Modal */}
-      <AuditDetailModal
-        audit={selectedAudit}
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedAudit(null);
-        }}
-      />
+      {/* Filtros */}
+      <AdvancedFilters onApplyFilters={handleApplyFilters} onResetFilters={handleResetFilters} />
+
+      {/* Tabla */}
+      <div className="bg-card rounded-lg border border-border p-4">
+        {loading ? (
+          <div className="py-16 text-center text-muted-foreground">Cargando auditorías…</div>
+        ) : (
+          <AuditTable
+            data={filteredData.map((r) => ({
+              id: r.id,
+              title: r.title,
+              area: r.area,
+              auditor: r.auditor,
+              status: r.status,      // Abierta | En curso | Cerrada | Pendiente | Bloqueada
+              severity: r.severity,  // Baja | Media | Alta | Crítica
+              createdAt: r.createdAt,
+              dueAt: r.dueAt,
+              findings: r.findings,
+            }))}
+            onRowClick={(row) => console.log("Abrir detalle de", row.id)}
+            onDeleteMany={handleDeleteMany}
+            initialPageSize={10}
+          />
+        )}
+      </div>
     </div>
   );
-};
+}
 
-export default AuditRecordsManagement;
+// util local
+function slugify(s) {
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+}

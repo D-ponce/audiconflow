@@ -61,7 +61,7 @@ const FileUploadZone = ({ onFilesSelected, acceptedFormats, maxFileSize }) => {
         
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-foreground">
-            Arrastra y suelta tus archivos aquí
+            Revisión de usuarios 
           </h3>
           <p className="text-sm text-muted-foreground">
             o haz clic para seleccionar archivos

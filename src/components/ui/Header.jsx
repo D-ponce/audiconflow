@@ -1,3 +1,4 @@
+// src/components/ui/Header.jsx
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Icon from "components/AppIcon";
@@ -35,6 +36,7 @@ const Header = () => {
             <span className="font-semibold">AudiconFlow</span>
           </Link>
 
+          {/* Navegación desktop */}
           <nav className="hidden md:flex items-center gap-6">
             {NAV_ITEMS.map((item) => (
               <Link
@@ -51,12 +53,14 @@ const Header = () => {
             ))}
           </nav>
 
+          {/* Acciones desktop */}
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" onClick={() => setShowConfirm(true)} iconName="LogOut">
               Cerrar sesión
             </Button>
           </div>
 
+          {/* Botón menú móvil */}
           <button
             className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg border hover:bg-accent"
             onClick={() => setIsMobileMenuOpen((s) => !s)}
@@ -66,6 +70,7 @@ const Header = () => {
           </button>
         </div>
 
+        {/* Navegación móvil */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-border">
             <nav className="px-4 py-2 flex flex-col gap-1">
@@ -98,14 +103,14 @@ const Header = () => {
         )}
       </header>
 
-      {/* Modal de confirmación animado */}
+      {/* Modal de confirmación */}
       {showConfirm && (
         <div
           className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center"
           onClick={() => setShowConfirm(false)}
         >
           <div
-            className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl p-6 w-full max-w-sm scale-100 animate-fade-in-up"
+            className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl p-6 w-full max-w-sm"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 mb-4">
@@ -131,3 +136,4 @@ const Header = () => {
 };
 
 export default Header;
+

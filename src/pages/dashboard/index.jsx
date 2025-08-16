@@ -142,11 +142,11 @@ const Dashboard = () => {
                   <Icon name="MapPin" size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                   <select className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none">
                     <option value="">Todas las ubicaciones</option>
-                    <option value="centro">Centro</option>
-                    <option value="norte">Norte</option>
-                    <option value="sur">Sur</option>
-                    <option value="este">Este</option>
-                    <option value="oeste">Oeste</option>
+                    <option value="tienda P">Tienda P</option>
+                    <option value="local S">Local S</option>
+                    <option value="centro de distribución P">Centro de Distribución P</option>
+                    <option value="centro de distribución S">Centro de Distribución S</option>
+                    <option value="casa matriz">Casa Matriz</option>
                   </select>
                 </div>
                 <div className="relative">

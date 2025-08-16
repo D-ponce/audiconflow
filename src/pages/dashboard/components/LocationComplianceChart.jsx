@@ -8,7 +8,7 @@ const LocationComplianceChart = () => {
     { location: 'Sur', completadas: 78, pendientes: 22 },
     { location: 'Este', completadas: 88, pendientes: 12 },
     { location: 'Oeste', completadas: 95, pendientes: 5 },
-    { location: 'Plaza', completadas: 82, pendientes: 18 }
+  
   ];
 
   return (

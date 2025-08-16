@@ -27,10 +27,10 @@ const VisualizationArea = ({ reportData, reportType }) => {
   ];
 
   const locationData = [
-    { name: 'Madrid Centro', value: 35, color: '#2563EB' },
-    { name: 'Barcelona Norte', value: 28, color: '#059669' },
-    { name: 'Valencia Este', value: 22, color: '#D97706' },
-    { name: 'Sevilla Sur', value: 15, color: '#DC2626' }
+    { name: 'Centro de Distribución P', value: 35, color: '#2563EB' },
+    { name: 'Centro de Distribución S', value: 28, color: '#059669' },
+    { name: 'Local S', value: 22, color: '#D97706' },
+    { name: 'Tienda P', value: 15, color: '#DC2626' }
   ];
 
   const trendData = [

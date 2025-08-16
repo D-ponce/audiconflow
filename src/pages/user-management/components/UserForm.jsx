@@ -45,9 +45,7 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
 
   const roleOptions = [
     { value: 'Administrador', label: 'Administrador' },
-    { value: 'Auditor Senior', label: 'Auditor Senior' },
     { value: 'Auditor', label: 'Auditor' },
-    { value: 'Analista', label: 'Analista' },
     { value: 'Supervisor', label: 'Supervisor' }
   ];
 
@@ -57,7 +55,7 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
     { value: 'Operaciones', label: 'Operaciones' },
     { value: 'Tecnología', label: 'Tecnología' },
     { value: 'Recursos Humanos', label: 'Recursos Humanos' },
-    { value: 'Cumplimiento', label: 'Cumplimiento' }
+    { value: 'Legal', label: 'Legal' }
   ];
 
   const statusOptions = [

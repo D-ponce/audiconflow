@@ -4,30 +4,28 @@ import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
 import Input from '../../../components/ui/Input';
 
-
 const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   const [filters, setFilters] = useState({
-    dateRange: {
-      start: '',
-      end: '',
-      preset: 'last30days'
-    },
+    dateRange: { start: '', end: '', preset: 'last30days' },
     locations: [],
     auditTypes: [],
     auditStatus: [],
     auditors: [],
-    complianceScore: {
-      min: 0,
-      max: 100
-    },
+    complianceScore: { min: 0, max: 100 },
     riskLevel: [],
     departments: [],
     customFields: {}
   });
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const dataSourceOptions = [
+    { value: 'all', label: 'Todas las fuentes' },
+    { value: 'audits', label: 'Auditorías completadas' },
+    { value: 'pending', label: 'Auditorías pendientes' },
+  ];
 
-  const presetDateOptions = [
+  const dateRangeOptions = [
     { value: 'today', label: 'Hoy' },
     { value: 'yesterday', label: 'Ayer' },
     { value: 'last7days', label: 'Últimos 7 días' },
@@ -40,21 +38,20 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
   ];
 
   const locationOptions = [
-    { value: 'madrid-centro', label: 'Madrid Centro' },
-    { value: 'barcelona-norte', label: 'Barcelona Norte' },
-    { value: 'valencia-este', label: 'Valencia Este' },
-    { value: 'sevilla-sur', label: 'Sevilla Sur' },
-    { value: 'bilbao-centro', label: 'Bilbao Centro' },
-    { value: 'zaragoza-oeste', label: 'Zaragoza Oeste' }
+    { value: 'cd_p', label: 'Centro de Distribución P' },
+    { value: 'cd_s', label: 'Centro de Distribución S' },
+    { value: 'casa_matriz', label: 'Casa Matriz' },
+    { value: 'local_s', label: 'Local S' },
+    { value: 'tienda_p', label: 'Tienda P' },
   ];
 
   const auditTypeOptions = [
-    { value: 'inventory', label: 'Auditoría de Inventario' },
-    { value: 'compliance', label: 'Auditoría de Cumplimiento' },
-    { value: 'financial', label: 'Auditoría Financiera' },
-    { value: 'operational', label: 'Auditoría Operacional' },
-    { value: 'security', label: 'Auditoría de Seguridad' },
-    { value: 'quality', label: 'Auditoría de Calidad' }
+    { value: 'contabilidad_usuarios', label: 'Auditoría de Usuarios' },
+    { value: 'finanzas_precios', label: 'Auditoría de Precios' },
+    { value: 'finanzas_stock', label: 'Auditoría Stock' },
+    { value: 'operacional_ventas', label: 'Auditoría Ventas' },
+    { value: 'finanzas_pagos_proveedores', label: 'Auditoría de Pago Proveedores' },
+    { value: 'legal_contratos', label: 'Auditoría de Contratos' }
   ];
 
   const auditStatusOptions = [
@@ -86,24 +83,21 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
     { value: 'inventory', label: 'Inventario' },
     { value: 'finance', label: 'Finanzas' },
     { value: 'operations', label: 'Operaciones' },
-    { value: 'security', label: 'Seguridad' },
+    { value: 'it', label: 'TI' },
     { value: 'hr', label: 'Recursos Humanos' }
   ];
 
   const handleFilterChange = (category, field, value) => {
     setFilters(prev => ({
       ...prev,
-      [category]: {
-        ...prev[category],
-        [field]: value
-      }
+      [category]: { ...prev[category], [field]: value }
     }));
   };
 
-  const handleArrayFilterChange = (field, value) => {
+  const handleArrayFilterChange = (category, value) => {
     setFilters(prev => ({
       ...prev,
-      [field]: value
+      [category]: value
     }));
   };
 
@@ -113,19 +107,12 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
 
   const handleResetFilters = () => {
     const resetFilters = {
-      dateRange: {
-        start: '',
-        end: '',
-        preset: 'last30days'
-      },
+      dateRange: { start: '', end: '', preset: 'last30days' },
       locations: [],
       auditTypes: [],
       auditStatus: [],
       auditors: [],
-      complianceScore: {
-        min: 0,
-        max: 100
-      },
+      complianceScore: { min: 0, max: 100 },
       riskLevel: [],
       departments: [],
       customFields: {}
@@ -146,10 +133,12 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
     return count;
   };
 
+  const presetDateOptions = dateRangeOptions; // usar el mismo arreglo
+
   return (
     <div className="bg-card rounded-lg border border-border">
       <div className="flex items-center justify-between p-4 border-b border-border">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-lg">
             <Icon name="Filter" size={16} color="var(--color-primary)" />
           </div>
@@ -174,7 +163,7 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
 
       {isExpanded && (
         <div className="p-6 space-y-6">
-          {/* Date Range */}
+          {/* Rango de Fechas */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-3">Rango de Fechas</label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -182,7 +171,7 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
                 options={presetDateOptions}
                 value={filters.dateRange.preset}
                 onChange={(value) => handleFilterChange('dateRange', 'preset', value)}
-                placeholder="Seleccionar período"
+                placeholder="Seleccionar rango"
               />
               {filters.dateRange.preset === 'custom' && (
                 <>
@@ -190,20 +179,20 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
                     type="date"
                     value={filters.dateRange.start}
                     onChange={(e) => handleFilterChange('dateRange', 'start', e.target.value)}
-                    placeholder="Fecha inicio"
+                    placeholder="Inicio"
                   />
                   <Input
                     type="date"
                     value={filters.dateRange.end}
                     onChange={(e) => handleFilterChange('dateRange', 'end', e.target.value)}
-                    placeholder="Fecha fin"
+                    placeholder="Término"
                   />
                 </>
               )}
             </div>
           </div>
 
-          {/* Location and Audit Type */}
+          {/* Ubicación y Tipo de Auditoría */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Select
               label="Ubicaciones"
@@ -225,10 +214,10 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
             />
           </div>
 
-          {/* Status and Auditors */}
+          {/* Estado y Auditores */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Select
-              label="Estado de Auditoría"
+              label="Estado"
               options={auditStatusOptions}
               value={filters.auditStatus}
               onChange={(value) => handleArrayFilterChange('auditStatus', value)}
@@ -246,9 +235,9 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
             />
           </div>
 
-          {/* Compliance Score Range */}
+          {/* Cumplimiento */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-3">Rango de Puntuación de Cumplimiento</label>
+            <label className="block text-sm font-medium text-foreground mb-3">Puntaje de Cumplimiento (%)</label>
             <div className="grid grid-cols-2 gap-4">
               <Input
                 type="number"
@@ -269,7 +258,7 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
             </div>
           </div>
 
-          {/* Risk Level and Departments */}
+          {/* Riesgo y Departamentos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Select
               label="Nivel de Riesgo"
@@ -289,32 +278,14 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <Button
-              variant="outline"
-              onClick={handleResetFilters}
-              iconName="RotateCcw"
-              iconPosition="left"
-            >
-              Limpiar Filtros
+          {/* Acciones */}
+          <div className="flex justify-end gap-3">
+            <Button variant="ghost" onClick={handleResetFilters} iconName="RotateCcw">
+              Restablecer
             </Button>
-            <div className="flex space-x-3">
-              <Button
-                variant="ghost"
-                onClick={() => setIsExpanded(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="default"
-                onClick={handleApplyFilters}
-                iconName="Check"
-                iconPosition="left"
-              >
-                Aplicar Filtros
-              </Button>
-            </div>
+            <Button variant="primary" onClick={handleApplyFilters} iconName="Check" iconPosition="left">
+              Aplicar Filtros
+            </Button>
           </div>
         </div>
       )}

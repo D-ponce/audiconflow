@@ -16,11 +16,9 @@ const ReportBuilder = ({ onGenerateReport }) => {
   });
 
   const dataSourceOptions = [
-    { value: 'all', label: 'Todas las fuentes' },
-    { value: 'audits', label: 'Auditorías completadas' },
-    { value: 'pending', label: 'Auditorías pendientes' },
-    { value: 'compliance', label: 'Datos de cumplimiento' },
-    { value: 'inventory', label: 'Datos de inventario' }
+    { value: 'audits', label: 'Auditorías' },
+    { value: 'findings', label: 'Hallazgos' },
+    { value: 'evidences', label: 'Evidencias' },
   ];
 
   const dateRangeOptions = [
@@ -32,34 +30,35 @@ const ReportBuilder = ({ onGenerateReport }) => {
   ];
 
   const locationOptions = [
-    { value: 'madrid', label: 'Madrid Centro' },
-    { value: 'barcelona', label: 'Barcelona Norte' },
-    { value: 'valencia', label: 'Valencia Este' },
-    { value: 'sevilla', label: 'Sevilla Sur' },
-    { value: 'bilbao', label: 'Bilbao Centro' }
+    { value: 'cd_p', label: 'Centro de Distribución P' },
+    { value: 'cd_s', label: 'Centro de Distribución S' },
+    { value: 'casa_matriz', label: 'Casa Matriz' },
+    { value: 'local_s', label: 'Local S' },
+    { value: 'tienda_p', label: 'Tienda P' },
   ];
 
   const auditTypeOptions = [
-    { value: 'inventory', label: 'Auditoría de Inventario' },
-    { value: 'compliance', label: 'Auditoría de Cumplimiento' },
-    { value: 'financial', label: 'Auditoría Financiera' },
-    { value: 'operational', label: 'Auditoría Operacional' },
-    { value: 'security', label: 'Auditoría de Seguridad' }
+    { value: 'contabilidad_usuarios', label: 'Auditoría de Usuarios' },
+    { value: 'finanzas_precios', label: 'Auditoría de Precios' },
+    { value: 'finanzas_stock', label: 'Auditoría Stock' },
+    { value: 'operacional_ventas', label: 'Auditoría Ventas' },
+    { value: 'finanzas_pagos_proveedores', label: 'Auditoría de Pago Proveedores' },
+    { value: 'legal_contratos', label: 'Auditoría de Contratos' }
   ];
 
   const reportTypeOptions = [
-    { value: 'compliance', label: 'Tendencias de Cumplimiento' },
-    { value: 'performance', label: 'Rendimiento de Auditores' },
-    { value: 'location', label: 'Comparación de Ubicaciones' },
+    { value: 'compliance', label: 'Cumplimiento' },
+    { value: 'effectiveness', label: 'Efectividad' },
+    { value: 'risk', label: 'Riesgo' },
     { value: 'summary', label: 'Resumen Ejecutivo' },
-    { value: 'detailed', label: 'Análisis Detallado' }
   ];
 
   const handleConfigChange = (field, value) => {
-    setReportConfig(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setReportConfig(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleArrayChange = (field, value) => {
+    setReportConfig(prev => ({ ...prev, [field]: value }));
   };
 
   const handleGenerateReport = () => {
@@ -69,89 +68,80 @@ const ReportBuilder = ({ onGenerateReport }) => {
   return (
     <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg">
-          <Icon name="Settings" size={20} color="var(--color-primary)" />
+        <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-lg">
+          <Icon name="FileBarChart" size={16} color="var(--color-primary)" />
         </div>
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">Constructor de Reportes</h3>
-          <p className="text-sm text-muted-foreground">Configure los parámetros para generar su reporte personalizado</p>
-        </div>
+        <h3 className="font-semibold text-foreground">Constructor de Reportes</h3>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <Select
-            label="Fuente de Datos"
-            options={dataSourceOptions}
-            value={reportConfig.dataSource}
-            onChange={(value) => handleConfigChange('dataSource', value)}
-            placeholder="Seleccionar fuente de datos"
+        <Select
+          label="Fuente de Datos"
+          options={dataSourceOptions}
+          value={reportConfig.dataSource}
+          onChange={(v) => handleConfigChange('dataSource', v)}
+          placeholder="Seleccionar fuente"
+        />
+
+        <Select
+          label="Rango de Fechas"
+          options={dateRangeOptions}
+          value={reportConfig.dateRange}
+          onChange={(v) => handleConfigChange('dateRange', v)}
+          placeholder="Seleccionar rango"
+        />
+      </div>
+
+      {reportConfig.dateRange === 'custom' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          <Input
+            type="date"
+            label="Inicio"
+            value={reportConfig.startDate}
+            onChange={(e) => handleConfigChange('startDate', e.target.value)}
           />
-
-          <Select
-            label="Rango de Fechas"
-            options={dateRangeOptions}
-            value={reportConfig.dateRange}
-            onChange={(value) => handleConfigChange('dateRange', value)}
-          />
-
-          {reportConfig.dateRange === 'custom' && (
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Fecha Inicio"
-                type="date"
-                value={reportConfig.startDate}
-                onChange={(e) => handleConfigChange('startDate', e.target.value)}
-              />
-              <Input
-                label="Fecha Fin"
-                type="date"
-                value={reportConfig.endDate}
-                onChange={(e) => handleConfigChange('endDate', e.target.value)}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-4">
-          <Select
-            label="Ubicaciones"
-            options={locationOptions}
-            value={reportConfig.locations}
-            onChange={(value) => handleConfigChange('locations', value)}
-            multiple
-            searchable
-            placeholder="Seleccionar ubicaciones"
-          />
-
-          <Select
-            label="Tipos de Auditoría"
-            options={auditTypeOptions}
-            value={reportConfig.auditTypes}
-            onChange={(value) => handleConfigChange('auditTypes', value)}
-            multiple
-            searchable
-            placeholder="Seleccionar tipos de auditoría"
-          />
-
-          <Select
-            label="Tipo de Reporte"
-            options={reportTypeOptions}
-            value={reportConfig.reportType}
-            onChange={(value) => handleConfigChange('reportType', value)}
-            placeholder="Seleccionar tipo de reporte"
+          <Input
+            type="date"
+            label="Término"
+            value={reportConfig.endDate}
+            onChange={(e) => handleConfigChange('endDate', e.target.value)}
           />
         </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        <Select
+          label="Ubicaciones"
+          options={locationOptions}
+          value={reportConfig.locations}
+          onChange={(v) => handleArrayChange('locations', v)}
+          multiple
+          searchable
+          placeholder="Seleccionar ubicaciones"
+        />
+        <Select
+          label="Tipos de Auditoría"
+          options={auditTypeOptions}
+          value={reportConfig.auditTypes}
+          onChange={(v) => handleArrayChange('auditTypes', v)}
+          multiple
+          searchable
+          placeholder="Seleccionar tipos"
+        />
+      </div>
+
+      <div className="mt-4">
+        <Select
+          label="Tipo de Reporte"
+          options={reportTypeOptions}
+          value={reportConfig.reportType}
+          onChange={(v) => handleConfigChange('reportType', v)}
+          placeholder="Seleccionar tipo"
+        />
       </div>
 
       <div className="flex justify-end mt-6">
-        <Button
-          variant="default"
-          onClick={handleGenerateReport}
-          iconName="BarChart3"
-          iconPosition="left"
-          disabled={!reportConfig.dataSource}
-        >
+        <Button variant="primary" iconName="FileSpreadsheet" iconPosition="left" onClick={handleGenerateReport}>
           Generar Reporte
         </Button>
       </div>

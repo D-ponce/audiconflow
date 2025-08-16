@@ -1,56 +1,38 @@
-import React from "react";
-import { BrowserRouter, Routes as RouterRoutes, Route, Navigate, Outlet } from "react-router-dom";
-import ScrollToTop from "components/ScrollToTop";
-import ErrorBoundary from "components/ErrorBoundary";
+// src/Routes.jsx
+import React, { Suspense, lazy } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import MainLayout from "components/layouts/MainLayout";
 
-import LoginScreen from "pages/login-screen";
-import Dashboard from "pages/dashboard";
-import FileUploadAndProcessing from "pages/file-upload-and-processing";
-import AuditRecordsManagement from "pages/audit-records-management";
-import UserManagement from "pages/user-management";
-import ReportsAndAnalytics from "pages/reports-and-analytics";
-import NotFound from "pages/NotFound";
+const Dashboard = lazy(() => import("pages/dashboard"));
+const FileUploadAndProcessing = lazy(() => import("pages/file-upload-and-processing"));
+const AuditRecordsManagement = lazy(() => import("pages/audit-records-management"));
+const ReportsAndAnalytics = lazy(() => import("pages/reports-and-analytics"));
+const UserManagement = lazy(() => import("pages/user-management"));
+const LoginScreen = lazy(() => import("pages/login-screen"));
 
-// --- Helpers de sesión (usa la misma clave que guardamos en LoginForm) ---
-function isAuth() {
-  try {
-    const data = JSON.parse(localStorage.getItem("auth") || "null");
-    return !!data?.token;
-  } catch {
-    return false;
-  }
+function Loader() {
+  return <div className="w-full py-10 text-center text-muted-foreground">Cargando…</div>;
 }
 
-function ProtectedRoute() {
-  return isAuth() ? <Outlet /> : <Navigate to="/login-screen" replace />;
-}
-
-const Routes = () => {
+export default function AppRoutes() {
   return (
     <BrowserRouter>
-      <ErrorBoundary>
-        <ScrollToTop />
-        <RouterRoutes>
-          {/* Landing = Login */}
-          <Route path="/" element={<LoginScreen />} />
-          <Route path="/login-screen" element={<LoginScreen />} />
+      <Suspense fallback={<Loader />}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Rutas protegidas */}
-          <Route element={<ProtectedRoute />}>
+          <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/file-upload-and-processing" element={<FileUploadAndProcessing />} />
             <Route path="/audit-records-management" element={<AuditRecordsManagement />} />
-            <Route path="/user-management" element={<UserManagement />} />
             <Route path="/reports-and-analytics" element={<ReportsAndAnalytics />} />
+            <Route path="/user-management" element={<UserManagement />} />
           </Route>
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </RouterRoutes>
-      </ErrorBoundary>
+          <Route path="/login-screen" element={<LoginScreen />} />
+          <Route path="*" element={<div className="p-6">404 – Página no encontrada</div>} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
-};
-
-export default Routes;
-
+}

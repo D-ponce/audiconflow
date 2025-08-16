@@ -48,28 +48,28 @@ const AuditDetailModal = ({ audit, isOpen, onClose }) => {
       action: 'Auditoría creada',
       user: 'María García',
       date: '2025-07-10T09:00:00',
-      details: 'Auditoría programada para Madrid Centro'
+      details: 'Auditoría continua de revisión de usuarios sistema Oracle'
     },
     {
       id: 2,
       action: 'Auditoría iniciada',
       user: 'María García',
       date: '2025-07-10T14:30:00',
-      details: 'Inicio de proceso de auditoría en tienda'
+      details: 'Auditoría continua de revisión de usuarios sistema SAP'
     },
     {
       id: 3,
       action: 'Documentos adjuntados',
       user: 'María García',
       date: '2025-07-11T11:15:00',
-      details: 'Subida de fotos y checklist de cumplimiento'
+      details: 'Auditoría continua de revisión de precios'
     },
     {
       id: 4,
       action: 'Auditoría completada',
       user: 'María García',
       date: '2025-07-11T17:45:00',
-      details: 'Finalización exitosa con puntuación de 92%'
+      details: 'Auditoría continua de revisión de revisión de stock'
     }
   ];
 

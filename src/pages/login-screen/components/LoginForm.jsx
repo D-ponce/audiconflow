@@ -5,27 +5,6 @@ import Input from "components/ui/Input";
 import { Checkbox } from "components/ui/Checkbox";
 import Icon from "components/AppIcon";
 
-// Credenciales únicas permitidas
-const validUsers = {
-  auditor: {
-    email: "auditor@audiconflow.com",
-    password: "auditor123",
-    role: "auditor",
-  },
-  supervisor: {
-    email: "supervisor@audiconflow.com",
-    password: "supervisor123",
-    role: "supervisor",
-  },
-  administrador: {
-    email: "admin@audiconflow.com",
-    password: "admin123",
-    role: "administrador",
-  },
-};
-
-const normalize = (value = "") => value.trim().toLowerCase();
-
 const LoginForm = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -50,62 +29,50 @@ const LoginForm = () => {
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.user) {
       newErrors.user = "Debes ingresar tu usuario (correo o rol)";
     }
-
     if (!formData.password) {
       newErrors.password = "Debes ingresar tu contraseña";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const authenticate = (inputUser, inputPass) => {
-    const userKey = normalize(inputUser);
-
-    // Comparar por rol directo
-    if (
-      validUsers[userKey] &&
-      validUsers[userKey].password === inputPass
-    ) {
-      return validUsers[userKey];
-    }
-
-    // Comparar por email
-    const match = Object.values(validUsers).find(
-      (u) => normalize(u.email) === userKey && u.password === inputPass
-    );
-
-    return match || null;
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      const userData = authenticate(formData.user, formData.password);
-      if (userData) {
+    try {
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user: formData.user,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrors({ general: data.error || "Error en login" });
+      } else {
         const session = {
-          email: userData.email,
-          role: userData.role,
+          email: data.email,
+          role: data.role,
           loginTime: new Date().toISOString(),
         };
         localStorage.setItem("audiconflow_session", JSON.stringify(session));
         navigate("/dashboard");
-      } else {
-        setErrors({
-          general:
-            "Credenciales inválidas. Usa uno de los roles: auditor, supervisor, administrador.",
-        });
       }
+    } catch (err) {
+      setErrors({ general: "Error de conexión con el servidor" });
+    } finally {
       setIsLoading(false);
-    }, 600);
+    }
   };
 
   return (
@@ -171,15 +138,6 @@ const LoginForm = () => {
           </Button>
         </div>
       </form>
-
-      <div className="mt-6 pt-6 border-t border-border">
-        <div className="text-xs text-muted-foreground text-center space-y-1">
-          <p className="font-medium">Usuarios válidos:</p>
-          <p>auditor / auditor123 — auditor@audiconflow.com</p>
-          <p>supervisor / supervisor123 — supervisor@audiconflow.com</p>
-          <p>administrador / admin123 — admin@audiconflow.com</p>
-        </div>
-      </div>
     </div>
   );
 };

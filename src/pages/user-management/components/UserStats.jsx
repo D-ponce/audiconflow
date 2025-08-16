@@ -47,8 +47,6 @@ const UserStats = () => {
 
   const roleDistribution = [
     { role: 'Auditor', count: 15, percentage: 34, color: 'bg-blue-500' },
-    { role: 'Analista', count: 12, percentage: 27, color: 'bg-green-500' },
-    { role: 'Auditor Senior', count: 8, percentage: 18, color: 'bg-purple-500' },
     { role: 'Supervisor', count: 6, percentage: 14, color: 'bg-orange-500' },
     { role: 'Administrador', count: 3, percentage: 7, color: 'bg-red-500' }
   ];
