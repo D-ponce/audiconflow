@@ -3,43 +3,11 @@ import User from "../models/Users.js";
 
 const router = express.Router();
 
-// Helper function para formatear el último acceso
-const formatLastLogin = (lastLogin) => {
-  if (!lastLogin) return "Nunca";
-  
-  const now = new Date();
-  const loginDate = new Date(lastLogin);
-  const diffInMs = now - loginDate;
-  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-  if (diffInMinutes < 1) return "Hace un momento";
-  if (diffInMinutes < 60) return `Hace ${diffInMinutes} minuto${diffInMinutes > 1 ? 's' : ''}`;
-  if (diffInHours < 24) return `Hace ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`;
-  if (diffInDays < 30) return `Hace ${diffInDays} día${diffInDays > 1 ? 's' : ''}`;
-  
-  return loginDate.toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
 // ✅ Obtener todos los usuarios
 router.get("/users", async (req, res) => {
   try {
     const users = await User.find({}, { password: 0 }); // Excluir password
-    
-    // Formatear lastLogin para cada usuario
-    const usersWithFormattedLogin = users.map(user => ({
-      ...user.toObject(),
-      lastLoginFormatted: formatLastLogin(user.lastLogin)
-    }));
-    
-    res.json(usersWithFormattedLogin);
+    res.json(users);
   } catch (err) {
     console.error("❌ Error al obtener usuarios - users.js:10", err);
     res.status(500).json({ error: "Error al obtener usuarios" });

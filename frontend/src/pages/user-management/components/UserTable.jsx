@@ -72,22 +72,28 @@ const UserTable = ({ users, onEditUser, onDeleteUser, onBulkAction, selectedUser
     );
   };
 
-  const getLastLogin = (user) => {
-    // Usar el campo formateado del backend si está disponible
-    if (user.lastLoginFormatted) {
-      return user.lastLoginFormatted;
-    }
+  const formatLastLogin = (date) => {
+    if (!date) return 'Nunca';
     
-    // Fallback al formateo local si no está disponible
-    if (!user.lastLogin) return 'Nunca';
     const now = new Date();
-    const loginDate = new Date(user.lastLogin);
-    const diffInHours = Math.floor((now - loginDate) / (1000 * 60 * 60));
+    const loginDate = new Date(date);
+    const diffInMs = now - loginDate;
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMinutes < 1) return 'Hace un momento';
+    if (diffInMinutes < 60) return `Hace ${diffInMinutes} minuto${diffInMinutes > 1 ? 's' : ''}`;
+    if (diffInHours < 24) return `Hace ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`;
+    if (diffInDays < 30) return `Hace ${diffInDays} día${diffInDays > 1 ? 's' : ''}`;
     
-    if (diffInHours < 1) return 'Hace menos de 1 hora';
-    if (diffInHours < 24) return `Hace ${diffInHours} horas`;
-    if (diffInHours < 168) return `Hace ${Math.floor(diffInHours / 24)} días`;
-    return loginDate.toLocaleDateString('es-ES');
+    return loginDate.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const allSelected = selectedUsers.length === sortedUsers.length && sortedUsers.length > 0;
@@ -214,7 +220,7 @@ const UserTable = ({ users, onEditUser, onDeleteUser, onBulkAction, selectedUser
                 </td>
                 <td className="p-4 text-foreground">{user.role}</td>
                 <td className="p-4 text-foreground">{user.department}</td>
-                <td className="p-4 text-muted-foreground">{getLastLogin(user)}</td>
+                <td className="p-4 text-muted-foreground">{formatLastLogin(user.lastLogin)}</td>
                 <td className="p-4">{getStatusBadge(user.status)}</td>
                 <td className="p-4">
                   <div className="flex items-center justify-center space-x-1">
@@ -286,7 +292,7 @@ const UserTable = ({ users, onEditUser, onDeleteUser, onBulkAction, selectedUser
               </div>
               <div>
                 <span className="text-muted-foreground">Último acceso:</span>
-                <span className="ml-1 text-foreground">{getLastLogin(user)}</span>
+                <span className="ml-1 text-foreground">{formatLastLogin(user.lastLogin)}</span>
               </div>
               <div className="flex items-center">
                 <span className="text-muted-foreground mr-2">Estado:</span>
