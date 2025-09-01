@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import AuditService from '../../services/auditService';
 
 const AuditEdit = () => {
   const location = useLocation();
@@ -12,15 +13,17 @@ const AuditEdit = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
+    name: '',
     auditId: '',
     type: '',
     location: '',
     auditor: '',
     startDate: '',
     completionDate: '',
-    status: 'pendiente',
+    dueDate: '',
+    status: 'En Progreso',
     description: '',
-    priority: 'media'
+    priority: 'Media'
   });
 
   useEffect(() => {
@@ -29,15 +32,17 @@ const AuditEdit = () => {
       const auditData = location.state.auditData;
       setAudit(auditData);
       setFormData({
+        name: auditData.name || '',
         auditId: auditData.auditId || '',
         type: auditData.type || '',
         location: auditData.location || '',
         auditor: auditData.auditor || '',
         startDate: auditData.startDate ? auditData.startDate.split('T')[0] : '',
         completionDate: auditData.completionDate ? auditData.completionDate.split('T')[0] : '',
-        status: auditData.status || 'pendiente',
+        dueDate: auditData.dueDate ? auditData.dueDate.split('T')[0] : '',
+        status: auditData.originalStatus || auditData.status || 'En Progreso',
         description: auditData.description || '',
-        priority: auditData.priority || 'media'
+        priority: auditData.priority || 'Media'
       });
       setLoading(false);
     } else if (auditId) {
@@ -53,20 +58,24 @@ const AuditEdit = () => {
     try {
       const response = await fetch(`http://localhost:5000/api/audits/${id}`);
       if (response.ok) {
-        const auditData = await response.json();
+        const data = await response.json();
+        const auditData = data.audit || data; // Manejar diferentes formatos de respuesta
         setAudit(auditData);
         setFormData({
+          name: auditData.name || '',
           auditId: auditData.auditId || '',
           type: auditData.type || '',
           location: auditData.location || '',
           auditor: auditData.auditor || '',
           startDate: auditData.startDate ? auditData.startDate.split('T')[0] : '',
           completionDate: auditData.completionDate ? auditData.completionDate.split('T')[0] : '',
-          status: auditData.status || 'pendiente',
+          dueDate: auditData.dueDate ? auditData.dueDate.split('T')[0] : '',
+          status: auditData.status || 'En Progreso',
           description: auditData.description || '',
-          priority: auditData.priority || 'media'
+          priority: auditData.priority || 'Media'
         });
       } else {
+        console.error('Error loading audit: Response not ok');
         navigate('/audit-records-management');
       }
     } catch (error) {
@@ -89,23 +98,56 @@ const AuditEdit = () => {
     setSaving(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/audits/${audit._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        alert('Auditoría actualizada correctamente');
-        navigate('/audit-records-management');
-      } else {
-        alert('Error al actualizar la auditoría');
-      }
+      // Usar el _id de MongoDB o el auditId como fallback
+      const auditIdentifier = audit._id || audit.auditId || formData.auditId;
+      console.log('Intentando actualizar auditoría con ID:', auditIdentifier);
+      console.log('Datos del audit completo:', audit);
+      
+      // Usar AuditService para mantener consistencia con el resto de la aplicación
+      const response = await AuditService.updateAudit(auditIdentifier, formData);
+      
+      console.log('Auditoría actualizada exitosamente:', response);
+      
+      // Mostrar notificación de éxito
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center';
+      notification.innerHTML = `
+        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+        </svg>
+        ✅ Auditoría ${formData.auditId} actualizada exitosamente
+      `;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 5000);
+      
+      // Navegar de vuelta a la lista de auditorías
+      navigate('/audit-records-management');
+      
     } catch (error) {
       console.error('Error updating audit:', error);
-      alert('Error al actualizar la auditoría');
+      
+      // Mostrar notificación de error
+      const errorNotification = document.createElement('div');
+      errorNotification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center';
+      errorNotification.innerHTML = `
+        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+        </svg>
+        ❌ Error al actualizar la auditoría: ${error.message || 'Error desconocido'}
+      `;
+      document.body.appendChild(errorNotification);
+      
+      setTimeout(() => {
+        if (document.body.contains(errorNotification)) {
+          document.body.removeChild(errorNotification);
+        }
+      }, 7000);
+      
     } finally {
       setSaving(false);
     }
@@ -160,6 +202,19 @@ const AuditEdit = () => {
                   Información Básica
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre de la Auditoría *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                      placeholder="Nombre descriptivo de la auditoría"
+                      required
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       ID de Auditoría *
@@ -238,6 +293,17 @@ const AuditEdit = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Fecha Límite
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.dueDate}
+                      onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Fecha de Finalización
                     </label>
                     <input
@@ -257,10 +323,13 @@ const AuditEdit = () => {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                       required
                     >
-                      <option value="pendiente">Pendiente</option>
-                      <option value="en-progreso">En Progreso</option>
-                      <option value="completada">Completada</option>
-                      <option value="revision">En Revisión</option>
+                      <option value="En Progreso">En Progreso</option>
+                      <option value="En Revisión">En Revisión</option>
+                      <option value="Completada">Completada</option>
+                      <option value="Pendiente Aprobación">Pendiente Aprobación</option>
+                      <option value="Aprobada">Aprobada</option>
+                      <option value="Rechazada">Rechazada</option>
+                      <option value="Archivada">Archivada</option>
                     </select>
                   </div>
                   <div>
@@ -272,9 +341,9 @@ const AuditEdit = () => {
                       onChange={(e) => handleInputChange('priority', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                     >
-                      <option value="baja">Baja</option>
-                      <option value="media">Media</option>
-                      <option value="alta">Alta</option>
+                      <option value="Baja">Baja</option>
+                      <option value="Media">Media</option>
+                      <option value="Alta">Alta</option>
                     </select>
                   </div>
                 </div>

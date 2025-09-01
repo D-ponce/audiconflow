@@ -108,13 +108,17 @@ router.get('/stats/summary', async (req, res) => {
     };
 
     const totalAudits = await Audit.countDocuments(createdAuditsFilter);
-    const activeAudits = await Audit.countDocuments({ ...createdAuditsFilter, status: 'Activa' });
+    const activeAudits = await Audit.countDocuments({ ...createdAuditsFilter, status: 'En Progreso' });
     const pendingAudits = await Audit.countDocuments({ 
       ...createdAuditsFilter,
       status: 'Pendiente'
     });
     const completedAudits = await Audit.countDocuments({ ...createdAuditsFilter, status: 'Completada' });
     const inReviewAudits = await Audit.countDocuments({ ...createdAuditsFilter, status: 'En Revisión' });
+    const pendingApprovalAudits = await Audit.countDocuments({ ...createdAuditsFilter, status: 'Pendiente Aprobación' });
+    const approvedAudits = await Audit.countDocuments({ ...createdAuditsFilter, status: 'Aprobada' });
+    const rejectedAudits = await Audit.countDocuments({ ...createdAuditsFilter, status: 'Rechazada' });
+    const archivedAudits = await Audit.countDocuments({ ...createdAuditsFilter, status: 'Archivada' });
     
     const priorityStats = await Audit.aggregate([
       { $match: createdAuditsFilter },
@@ -132,6 +136,10 @@ router.get('/stats/summary', async (req, res) => {
       pending: pendingAudits,
       completed: completedAudits,
       inReview: inReviewAudits,
+      pendingApproval: pendingApprovalAudits,
+      approved: approvedAudits,
+      rejected: rejectedAudits,
+      archived: archivedAudits,
       byPriority: priorityStats.reduce((acc, item) => {
         acc[item._id.toLowerCase()] = item.count;
         return acc;

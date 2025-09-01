@@ -38,7 +38,7 @@ const auditSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pendiente', 'Activa', 'En Progreso', 'En Revisión', 'Completada'],
+    enum: ['Pendiente', 'En Progreso', 'En Revisión', 'Completada', 'Pendiente Aprobación', 'Aprobada', 'Rechazada', 'Archivada'],
     default: 'Pendiente'
   },
   createdBy: {

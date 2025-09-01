@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Icon from '../../../components/AppIcon';
+import ForgotPasswordModal from './ForgotPasswordModal';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const LoginForm = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -114,7 +116,7 @@ const LoginForm = () => {
   };
 
   const handleForgotPassword = () => {
-    alert('Funcionalidad de recuperación de contraseña próximamente disponible');
+    setShowForgotPassword(true);
   };
 
   return (
@@ -189,6 +191,12 @@ const LoginForm = () => {
         </Button>
       </form>
       </div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </div>
   );
 };

@@ -26,13 +26,13 @@ const AuditMetrics = () => {
 
   const metrics = stats ? [
     {
-      title: 'Auditorías Activas',
+      title: 'Progreso',
       value: stats.active || 0,
       change: '+' + (stats.active > 0 ? Math.floor(stats.active * 0.2) : 0),
       changeType: 'positive',
       icon: 'FileCheck',
       iconColor: 'bg-blue-500',
-      description: 'En progreso este mes'
+      description: 'En proceso'
     },
     {
       title: 'Completadas',

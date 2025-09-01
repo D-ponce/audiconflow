@@ -69,4 +69,112 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Recuperación de contraseña
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    console.log("🔍 Solicitud de recuperación para:", email);
+    
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: "No se encontró una cuenta asociada a este correo electrónico" 
+      });
+    }
+
+    // Generar token de recuperación (simulado)
+    const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const resetExpires = new Date(Date.now() + 3600000); // 1 hora
+
+    // Actualizar usuario con token de recuperación
+    await User.findByIdAndUpdate(user._id, {
+      resetPasswordToken: resetToken,
+      resetPasswordExpires: resetExpires
+    });
+
+    console.log("📧 Token de recuperación generado:", resetToken);
+
+    // Simular envío de correo (en producción usar nodemailer, SendGrid, etc.)
+    const resetLink = `http://localhost:4028/reset-password?token=${resetToken}`;
+    
+    // Log del correo que se enviaría
+    console.log(`
+📧 CORREO DE RECUPERACIÓN (SIMULADO):
+Para: ${email}
+Asunto: Recuperación de contraseña - AudiconFlow
+Contenido:
+Hola,
+
+Has solicitado restablecer tu contraseña para AudiconFlow.
+
+Haz clic en el siguiente enlace para crear una nueva contraseña:
+${resetLink}
+
+Este enlace expirará en 1 hora.
+
+Si no solicitaste este cambio, puedes ignorar este correo.
+
+Saludos,
+Equipo AudiconFlow
+    `);
+
+    res.json({
+      success: true,
+      message: "Se ha enviado un enlace de recuperación a tu correo electrónico",
+      // En desarrollo, incluir el token para pruebas
+      ...(process.env.NODE_ENV === 'development' && { resetToken, resetLink })
+    });
+
+  } catch (error) {
+    console.error("❌ Error en forgot-password:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Error interno del servidor" 
+    });
+  }
+});
+
+// Restablecer contraseña
+router.post("/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    console.log("🔍 Intento de restablecimiento con token:", token);
+    
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Token inválido o expirado" 
+      });
+    }
+
+    // Actualizar contraseña
+    user.password = newPassword; // El middleware pre-save se encargará del hash
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    console.log("✅ Contraseña restablecida para:", user.email);
+
+    res.json({
+      success: true,
+      message: "Contraseña restablecida exitosamente"
+    });
+
+  } catch (error) {
+    console.error("❌ Error en reset-password:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Error interno del servidor" 
+    });
+  }
+});
+
 export default router;

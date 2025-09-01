@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema({
   },
   permissions: [{ type: String }],
   lastLogin: { type: Date },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
   createdAt: { type: Date, default: Date.now }
 });
 

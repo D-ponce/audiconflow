@@ -51,6 +51,53 @@ const ExportOptions = ({ onExport }) => {
     }));
   };
 
+  const handlePreview = async () => {
+    console.log('👁️ Generando vista previa...');
+    
+    if (!crossResults || !crossResults.results) {
+      alert('No hay datos de cruce para mostrar vista previa');
+      return;
+    }
+
+    try {
+      // Preparar datos del reporte para vista previa
+      const reportData = {
+        name: `Reporte de Cruce: ${selectedKey || 'Campo Clave'} vs ${selectedResult || 'Campo Resultado'}`,
+        createdBy: localStorage.getItem('currentUser') || 'Usuario Anónimo',
+        data: {
+          crossResults: crossResults.results,
+          configuration: {
+            keyField: selectedKey || 'Campo Clave',
+            resultField: selectedResult || 'Campo Resultado',
+            processedFiles: selectedFiles || [],
+            exportConfig: exportConfig
+          }
+        },
+        metadata: {
+          totalRecords: crossResults.results.length,
+          matchedRecords: crossResults.results.filter(r => r.resultado === 'hay coincidencia').length,
+          unmatchedRecords: crossResults.results.filter(r => r.resultado !== 'hay coincidencia').length,
+          matchPercentage: Math.round((crossResults.results.filter(r => r.resultado === 'hay coincidencia').length / crossResults.results.length) * 100),
+          fileNames: selectedFiles || []
+        }
+      };
+
+      // Generar HTML para vista previa
+      const htmlContent = generateHTMLReport(reportData);
+      
+      // Abrir en nueva ventana
+      const previewWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+      previewWindow.document.write(htmlContent);
+      previewWindow.document.close();
+      
+      console.log('✅ Vista previa generada exitosamente');
+      
+    } catch (error) {
+      console.error('❌ Error generando vista previa:', error);
+      alert('Error al generar vista previa. Intente nuevamente.');
+    }
+  };
+
   const handleExport = async () => {
     console.log('🔄 Iniciando generación de reporte...');
     console.log('📊 Datos disponibles:', { crossResults, selectedKey, selectedResult, selectedFiles });
@@ -644,7 +691,13 @@ const ExportOptions = ({ onExport }) => {
             El archivo se descargará automáticamente una vez generado
           </div>
           <div className="flex space-x-3">
-            <Button variant="outline" iconName="Eye" iconPosition="left">
+            <Button 
+              variant="outline" 
+              iconName="Eye" 
+              iconPosition="left"
+              onClick={handlePreview}
+              disabled={!crossResults || !crossResults.results}
+            >
               Vista Previa
             </Button>
             <Button 

@@ -73,7 +73,7 @@ const Button = React.forwardRef(({
 
     // Icon rendering
     const renderIcon = () => {
-        if (!iconName) return null;
+        if (!iconName || iconName === null) return null;
 
         return (
             <Icon

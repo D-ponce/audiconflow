@@ -43,10 +43,13 @@ const AuditRecordsManagement = () => {
         // Transform data to match the expected format
         const transformedAudits = response.audits.map(audit => ({
           id: audit._id,
+          name: audit.name, // Incluir el campo name de la auditoría
           auditId: audit.auditId,
           location: audit.location,
           auditor: audit.auditor,
-          status: audit.status.toLowerCase().replace(/\s+/g, '-'),
+          // Transformar estados para mapeo consistente con AuditTable
+          status: audit.status.toLowerCase().replace(/\s+/g, '-').replace(/ó/g, 'o'),
+          originalStatus: audit.status, // Mantener estado original para edición
           startDate: audit.createdAt,
           completionDate: audit.status === 'Completada' ? audit.updatedAt : null,
           complianceScore: audit.completionPercentage || 0,
@@ -231,10 +234,18 @@ const AuditRecordsManagement = () => {
   };
 
   const handleEditRecord = (record) => {
+    // Asegurar que el objeto tenga el _id correcto para MongoDB
+    const auditDataWithId = {
+      ...record,
+      _id: record.id || record._id  // Usar el id transformado como _id para MongoDB
+    };
+    
+    console.log('Enviando a edición:', auditDataWithId);
+    
     // Redirigir a la página de edición de auditoría
     navigate('/audit-edit', { 
       state: { 
-        auditData: record,
+        auditData: auditDataWithId,
         fromAuditEdit: true 
       } 
     });

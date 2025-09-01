@@ -12,15 +12,12 @@ const ActionButtons = ({
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       {/* Primary Actions */}
       <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant="default"
+        <button
           onClick={onNewAudit}
-          iconName="Plus"
-          iconPosition="left"
-          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+          className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-md shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 font-medium text-sm"
         >
           Nueva Auditoría
-        </Button>
+        </button>
       </div>
 
       {/* Bulk Actions - Show when items are selected */}
