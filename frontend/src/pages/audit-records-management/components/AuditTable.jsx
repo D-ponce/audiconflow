@@ -11,19 +11,37 @@ const AuditTable = ({
   onSort, 
   sortConfig, 
   onViewDetails, 
-  onEditRecord, 
-  onDuplicateRecord, 
-  onArchiveRecord 
+  onEditRecord,
+  onProcessData,
+  onDeleteRecord
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'pendiente': { color: 'bg-warning text-warning-foreground', label: 'Pendiente' },
-      'en-progreso': { color: 'bg-accent text-accent-foreground', label: 'En Progreso' },
-      'completada': { color: 'bg-success text-success-foreground', label: 'Completada' },
-      'revision': { color: 'bg-secondary text-secondary-foreground', label: 'En Revisión' },
-      'archivada': { color: 'bg-muted text-muted-foreground', label: 'Archivada' }
+      'pendiente': { color: 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg', label: 'Pendiente' },
+      'en-progreso': { color: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg', label: 'En Progreso' },
+      'completada': { color: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg', label: 'Completada' },
+      'revision': { color: 'bg-gradient-to-r from-purple-500 to-violet-500 text-white shadow-lg', label: 'En Revisión' },
+      'pendiente-aprobacion': { color: 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg', label: 'Pendiente Aprobación' },
+      'aprobada': { color: 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg', label: 'Aprobada' },
+      'rechazada': { color: 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg', label: 'Rechazada' },
+      'archivada': { 
+        color: status === 'completada' 
+          ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-green-200' 
+          : status === 'en_progreso'
+          ? 'bg-gradient-to-r from-blue-400 to-cyan-500 text-white shadow-blue-200'
+          : status === 'pendiente'
+          ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-yellow-200'
+          : status === 'pendiente_aprobacion'
+          ? 'bg-gradient-to-r from-purple-400 to-violet-500 text-white shadow-purple-200'
+          : status === 'aprobada'
+          ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-white shadow-emerald-200'
+          : status === 'rechazada'
+          ? 'bg-gradient-to-r from-red-400 to-pink-500 text-white shadow-red-200'
+          : 'bg-gradient-to-r from-gray-400 to-slate-500 text-white shadow-gray-200',
+        label: 'Archivada' 
+      }
     };
 
     const config = statusConfig[status] || statusConfig['pendiente'];
@@ -167,38 +185,55 @@ const AuditTable = ({
                   </span>
                 </td>
                 <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-center space-x-1">
+                  <div className="flex items-center space-x-1">
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onViewDetails(record)}
-                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Eye button clicked for record:', record);
+                        onViewDetails(record);
+                      }}
+                      className="h-8 w-8 hover:bg-yellow-100"
+                      title="Ver detalles de la auditoría"
                     >
                       <Icon name="Eye" size={16} />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onEditRecord(record)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditRecord(record);
+                      }}
                       className="h-8 w-8"
+                      title="Editar auditoría"
                     >
                       <Icon name="Edit" size={16} />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onDuplicateRecord(record)}
-                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onProcessData(record);
+                      }}
+                      className="h-8 w-8 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700"
+                      title="Procesar datos"
                     >
-                      <Icon name="Copy" size={16} />
+                      <Icon name="Zap" size={16} />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onArchiveRecord(record)}
-                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteRecord(record);
+                      }}
+                      className="h-8 w-8 hover:bg-red-100 text-red-600 hover:text-red-700"
+                      title="Eliminar auditoría"
                     >
-                      <Icon name="Archive" size={16} />
+                      <Icon name="Trash2" size={16} />
                     </Button>
                   </div>
                 </td>
@@ -265,27 +300,27 @@ const AuditTable = ({
               <div className="flex items-center space-x-1">
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   onClick={() => onEditRecord(record)}
-                  className="h-8 w-8"
+                  className="text-blue-600 hover:text-blue-700"
                 >
                   <Icon name="Edit" size={16} />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
-                  onClick={() => onDuplicateRecord(record)}
-                  className="h-8 w-8"
+                  size="sm"
+                  onClick={() => onProcessData(record)}
+                  className="text-yellow-600 hover:text-yellow-700"
                 >
-                  <Icon name="Copy" size={16} />
+                  <Icon name="Zap" size={16} />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
-                  onClick={() => onArchiveRecord(record)}
-                  className="h-8 w-8"
+                  size="sm"
+                  onClick={() => onDeleteRecord(record)}
+                  className="text-red-600 hover:text-red-700"
                 >
-                  <Icon name="Archive" size={16} />
+                  <Icon name="Trash2" size={16} />
                 </Button>
               </div>
             </div>

@@ -38,9 +38,9 @@ const UserTable = ({ users, onEditUser, onDeleteUser, onBulkAction, selectedUser
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.department.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (user.department || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = !roleFilter || user.role === roleFilter;
     const matchesStatus = !statusFilter || user.status === statusFilter;
     
@@ -72,10 +72,16 @@ const UserTable = ({ users, onEditUser, onDeleteUser, onBulkAction, selectedUser
     );
   };
 
-  const formatLastLogin = (date) => {
-    if (!date) return 'Nunca';
+  const getLastLogin = (user) => {
+    // Usar el campo formateado del backend si está disponible
+    if (user.lastLoginFormatted) {
+      return user.lastLoginFormatted;
+    }
+    
+    // Fallback al formateo local si no está disponible
+    if (!user.lastLogin) return 'Nunca';
     const now = new Date();
-    const loginDate = new Date(date);
+    const loginDate = new Date(user.lastLogin);
     const diffInHours = Math.floor((now - loginDate) / (1000 * 60 * 60));
     
     if (diffInHours < 1) return 'Hace menos de 1 hora';
@@ -208,7 +214,7 @@ const UserTable = ({ users, onEditUser, onDeleteUser, onBulkAction, selectedUser
                 </td>
                 <td className="p-4 text-foreground">{user.role}</td>
                 <td className="p-4 text-foreground">{user.department}</td>
-                <td className="p-4 text-muted-foreground">{formatLastLogin(user.lastLogin)}</td>
+                <td className="p-4 text-muted-foreground">{getLastLogin(user)}</td>
                 <td className="p-4">{getStatusBadge(user.status)}</td>
                 <td className="p-4">
                   <div className="flex items-center justify-center space-x-1">
@@ -280,7 +286,7 @@ const UserTable = ({ users, onEditUser, onDeleteUser, onBulkAction, selectedUser
               </div>
               <div>
                 <span className="text-muted-foreground">Último acceso:</span>
-                <span className="ml-1 text-foreground">{formatLastLogin(user.lastLogin)}</span>
+                <span className="ml-1 text-foreground">{getLastLogin(user)}</span>
               </div>
               <div className="flex items-center">
                 <span className="text-muted-foreground mr-2">Estado:</span>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
@@ -13,93 +13,91 @@ const UserManagement = () => {
   const [isUserFormOpen, setIsUserFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: 'María González',
-      email: 'maria.gonzalez@empresa.com',
-      role: 'Administrador',
-      department: 'Auditoría',
-      phone: '+34 600 123 456',
-      status: 'Activo',
-      lastLogin: new Date(Date.now() - 1000 * 60 * 30),
-      createdAt: '2024-01-15',
-      permissions: ['dashboard_view', 'audit_create', 'audit_edit', 'users_manage']
-    },
-    {
-      id: 2,
-      name: 'Carlos Rodríguez',
-      email: 'carlos.rodriguez@empresa.com',
-      role: 'Auditor Senior',
-      department: 'Auditoría',
-      phone: '+34 600 234 567',
-      status: 'Activo',
-      lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 2),
-      createdAt: '2024-02-20',
-      permissions: ['dashboard_view', 'audit_create', 'audit_edit', 'reports_view']
-    },
-    {
-      id: 3,
-      name: 'Ana Martínez',
-      email: 'ana.martinez@empresa.com',
-      role: 'Auditor',
-      department: 'Operaciones',
-      phone: '+34 600 345 678',
-      status: 'Activo',
-      lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 4),
-      createdAt: '2024-03-10',
-      permissions: ['dashboard_view', 'audit_view', 'reports_view']
-    },
-    {
-      id: 4,
-      name: 'Luis Fernández',
-      email: 'luis.fernandez@empresa.com',
-      role: 'Analista',
-      department: 'Finanzas',
-      phone: '+34 600 456 789',
-      status: 'Activo',
-      lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 6),
-      createdAt: '2024-04-05',
-      permissions: ['dashboard_view', 'reports_view', 'files_upload']
-    },
-    {
-      id: 5,
-      name: 'Elena Sánchez',
-      email: 'elena.sanchez@empresa.com',
-      role: 'Supervisor',
-      department: 'Cumplimiento',
-      phone: '+34 600 567 890',
-      status: 'Inactivo',
-      lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
-      createdAt: '2024-05-12',
-      permissions: ['dashboard_view', 'audit_view', 'users_view']
-    },
-    {
-      id: 6,
-      name: 'Roberto Jiménez',
-      email: 'roberto.jimenez@empresa.com',
-      role: 'Auditor',
-      department: 'Auditoría',
-      phone: '+34 600 678 901',
-      status: 'Activo',
-      lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 8),
-      createdAt: '2024-06-18',
-      permissions: ['dashboard_view', 'audit_view', 'audit_create']
-    },
-    {
-      id: 7,
-      name: 'Patricia López',
-      email: 'patricia.lopez@empresa.com',
-      role: 'Analista',
-      department: 'Tecnología',
-      phone: '+34 600 789 012',
-      status: 'Suspendido',
-      lastLogin: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
-      createdAt: '2024-07-01',
-      permissions: ['dashboard_view', 'files_upload', 'files_process']
+  // 🔹 Cargar usuarios desde la API
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      // Datos mock mientras el backend no esté disponible
+      const mockUsers = [
+        {
+          _id: '1',
+          name: 'Administrador',
+          email: 'admin@audiconflow.com',
+          role: 'administrador',
+          department: 'Administración',
+          phone: '+34 600 000 000',
+          status: 'Activo',
+          createdAt: new Date().toISOString(),
+          permissions: ['users_manage', 'alerts_review']
+        },
+        {
+          _id: '2',
+          name: 'Juan Pérez',
+          email: 'juan@audiconflow.com',
+          role: 'auditor',
+          department: 'Auditoría',
+          phone: '+34 600 111 222',
+          status: 'Activo',
+          createdAt: new Date().toISOString(),
+          permissions: ['audit_view']
+        }
+      ];
+
+      // Intentar conectar con la API, si falla usar datos mock
+      try {
+        const response = await fetch('http://localhost:5000/api/users');
+        const data = await response.json();
+      
+        if (response.ok) {
+          // Transformar datos para compatibilidad con el frontend
+          const transformedUsers = data.map(user => ({
+            id: user._id,
+            name: user.name || '',
+            email: user.email || '',
+            role: user.role || '',
+            department: user.department || '',
+            phone: user.phone || '',
+            status: user.status || 'Activo',
+            lastLogin: user.lastLogin ? new Date(user.lastLogin) : null,
+            createdAt: user.createdAt,
+            permissions: user.permissions || []
+          }));
+          setUsers(transformedUsers);
+        } else {
+          throw new Error(data.error || 'Error al cargar usuarios');
+        }
+      } catch (apiError) {
+        console.log('⚠️ API no disponible, usando datos mock');
+        // Usar datos mock si la API no está disponible
+        const transformedMockUsers = mockUsers.map(user => ({
+          id: user._id,
+          name: user.name || '',
+          email: user.email || '',
+          role: user.role || '',
+          department: user.department || '',
+          phone: user.phone || '',
+          status: user.status || 'Activo',
+          lastLogin: user.lastLogin ? new Date(user.lastLogin) : null,
+          createdAt: user.createdAt,
+          permissions: user.permissions || []
+        }));
+        setUsers(transformedMockUsers);
+      }
+    } catch (err) {
+      console.error('❌ Error general:', err);
+      setError('Error al cargar usuarios');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const tabs = [
     { id: 'users', label: 'Usuarios', icon: 'Users' },
@@ -118,23 +116,57 @@ const UserManagement = () => {
     setIsUserFormOpen(true);
   };
 
-  const handleDeleteUser = (userId) => {
+  const handleDeleteUser = async (userId) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-      setUsers(users.filter(user => user.id !== userId));
-      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+      try {
+        const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          await fetchUsers(); // Recargar lista
+          setSelectedUsers(selectedUsers.filter(id => id !== userId));
+        } else {
+          const data = await response.json();
+          alert(data.error || 'Error al eliminar usuario');
+        }
+      } catch (err) {
+        console.error('❌ Error al eliminar usuario:', err);
+        alert('Error de conexión con el servidor');
+      }
     }
   };
 
-  const handleSaveUser = (userData) => {
-    if (editingUser) {
-      setUsers(users.map(user => 
-        user.id === editingUser.id ? { ...userData, id: editingUser.id } : user
-      ));
-    } else {
-      setUsers([...users, { ...userData, id: Date.now() }]);
+  const handleSaveUser = async (userData) => {
+    try {
+      const url = editingUser 
+        ? `http://localhost:5000/api/users/${editingUser.id}`
+        : 'http://localhost:5000/api/users';
+      
+      const method = editingUser ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        await fetchUsers(); // Recargar lista
+        setIsUserFormOpen(false);
+        setEditingUser(null);
+        alert(data.message || 'Usuario guardado exitosamente');
+      } else {
+        alert(data.error || 'Error al guardar usuario');
+      }
+    } catch (err) {
+      console.error('❌ Error al guardar usuario:', err);
+      alert('Error de conexión con el servidor');
     }
-    setIsUserFormOpen(false);
-    setEditingUser(null);
   };
 
   const handleUserSelect = (userId, checked) => {
@@ -153,27 +185,55 @@ const UserManagement = () => {
     }
   };
 
-  const handleBulkAction = (action) => {
-    switch (action) {
-      case 'activate':
-        setUsers(users.map(user => 
-          selectedUsers.includes(user.id) ? { ...user, status: 'Activo' } : user
-        ));
-        break;
-      case 'deactivate':
-        setUsers(users.map(user => 
-          selectedUsers.includes(user.id) ? { ...user, status: 'Inactivo' } : user
-        ));
-        break;
-      case 'delete':
+  const handleBulkAction = async (action) => {
+    try {
+      if (action === 'delete') {
         if (window.confirm(`¿Estás seguro de que deseas eliminar ${selectedUsers.length} usuario(s)?`)) {
-          setUsers(users.filter(user => !selectedUsers.includes(user.id)));
+          const response = await fetch('http://localhost:5000/api/users/bulk', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userIds: selectedUsers }),
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok) {
+            await fetchUsers(); // Recargar lista
+            alert(data.message || 'Usuarios eliminados exitosamente');
+          } else {
+            alert(data.error || 'Error al eliminar usuarios');
+          }
         }
-        break;
-      default:
-        break;
+      } else {
+        // Para activate, deactivate, suspend
+        const response = await fetch('http://localhost:5000/api/users/bulk', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            userIds: selectedUsers, 
+            action: action 
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          await fetchUsers(); // Recargar lista
+          alert(data.message || 'Usuarios actualizados exitosamente');
+        } else {
+          alert(data.error || 'Error al actualizar usuarios');
+        }
+      }
+    } catch (err) {
+      console.error('❌ Error en acción masiva:', err);
+      alert('Error de conexión con el servidor');
+    } finally {
+      setSelectedUsers([]);
     }
-    setSelectedUsers([]);
   };
 
   const renderTabContent = () => {
@@ -202,9 +262,8 @@ const UserManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-red-100">
       <Header />
-      
       <main className="pt-16">
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Page Header */}
@@ -249,7 +308,27 @@ const UserManagement = () => {
 
           {/* Tab Content */}
           <div className="space-y-6">
-            {renderTabContent()}
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center space-x-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  <span className="text-muted-foreground">Cargando usuarios...</span>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Icon name="AlertCircle" size={48} className="text-red-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Error al cargar usuarios</h3>
+                  <p className="text-muted-foreground mb-4">{error}</p>
+                  <Button onClick={fetchUsers} variant="outline">
+                    Reintentar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              renderTabContent()
+            )}
           </div>
         </div>
       </main>

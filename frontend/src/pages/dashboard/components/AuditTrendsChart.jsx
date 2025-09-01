@@ -1,19 +1,72 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import AuditService from '../../../services/auditService';
 
 const AuditTrendsChart = () => {
-  const data = [
-    { month: 'Ene', auditorias: 45, completadas: 42 },
-    { month: 'Feb', auditorias: 52, completadas: 48 },
-    { month: 'Mar', auditorias: 48, completadas: 45 },
-    { month: 'Abr', auditorias: 61, completadas: 58 },
-    { month: 'May', auditorias: 55, completadas: 52 },
-    { month: 'Jun', auditorias: 67, completadas: 63 },
-    { month: 'Jul', auditorias: 58, completadas: 55 }
-  ];
+  const [chartData, setChartData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadChartData = async () => {
+      try {
+        setLoading(true);
+        const response = await AuditService.getAudits();
+        
+        if (response.success) {
+          // Process real audit data to create monthly trends
+          const monthlyData = processAuditData(response.audits);
+          setChartData(monthlyData);
+        }
+      } catch (error) {
+        console.error('Error loading chart data:', error);
+        // Fallback to empty data
+        setChartData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadChartData();
+  }, []);
+
+  const processAuditData = (audits) => {
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const currentYear = new Date().getFullYear();
+    
+    // Initialize data for last 7 months
+    const monthlyStats = {};
+    const now = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      const monthName = months[date.getMonth()];
+      
+      monthlyStats[monthKey] = {
+        month: monthName,
+        auditorias: 0,
+        completadas: 0
+      };
+    }
+
+    // Count audits by month
+    audits.forEach(audit => {
+      const createdDate = new Date(audit.createdAt);
+      const monthKey = `${createdDate.getFullYear()}-${createdDate.getMonth()}`;
+      
+      if (monthlyStats[monthKey]) {
+        monthlyStats[monthKey].auditorias++;
+        if (audit.status === 'Completada') {
+          monthlyStats[monthKey].completadas++;
+        }
+      }
+    });
+
+    return Object.values(monthlyStats);
+  };
 
   return (
-    <div className="bg-card rounded-lg border border-border p-6 shadow-minimal">
+    <div className="powerbi-chart">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-foreground">Tendencias de Auditorías</h3>
         <div className="flex items-center space-x-4 text-sm">
@@ -28,8 +81,13 @@ const AuditTrendsChart = () => {
         </div>
       </div>
       <div className="w-full h-80" aria-label="Gráfico de Tendencias de Auditorías">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-muted-foreground">Cargando datos...</div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
             <XAxis 
               dataKey="month" 
@@ -56,14 +114,14 @@ const AuditTrendsChart = () => {
               dot={{ fill: '#2563EB', strokeWidth: 2, r: 4 }}
             />
             <Line 
-              type="monotone" 
               dataKey="completadas" 
               stroke="#059669" 
               strokeWidth={2}
               dot={{ fill: '#059669', strokeWidth: 2, r: 4 }}
             />
-          </LineChart>
-        </ResponsiveContainer>
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

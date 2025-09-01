@@ -40,12 +40,11 @@ const AdvancedFilters = ({ onApplyFilters, onResetFilters }) => {
   ];
 
   const locationOptions = [
-    { value: 'madrid-centro', label: 'Madrid Centro' },
-    { value: 'barcelona-norte', label: 'Barcelona Norte' },
-    { value: 'valencia-este', label: 'Valencia Este' },
-    { value: 'sevilla-sur', label: 'Sevilla Sur' },
-    { value: 'bilbao-centro', label: 'Bilbao Centro' },
-    { value: 'zaragoza-oeste', label: 'Zaragoza Oeste' }
+    { value: 'casa-matriz', label: 'Casa Matriz' },
+    { value: 'centro-distribucion-s', label: 'Centro de distribución S' },
+    { value: 'centro-distribucion-p', label: 'Centro de Distribución P' },
+    { value: 'locales', label: 'Locales' },
+    { value: 'tiendas', label: 'Tiendas' }
   ];
 
   const auditTypeOptions = [

@@ -1,81 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
+import reportService from '../../../services/reportService';
 
 const SavedReports = ({ onLoadReport, onShareReport }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [sortBy, setSortBy] = useState('date');
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const savedReports = [
-    {
-      id: 1,
-      name: 'Análisis de Cumplimiento Q2 2025',
-      category: 'Cumplimiento',
-      createdBy: 'María García',
-      createdDate: '2025-07-10',
-      lastModified: '2025-07-11',
-      size: '2.4 MB',
-      format: 'PDF',
-      shared: true,
-      views: 24,
-      description: 'Análisis detallado del cumplimiento normativo durante el segundo trimestre'
-    },
-    {
-      id: 2,
-      name: 'Rendimiento de Auditores - Junio',
-      category: 'Recursos Humanos',
-      createdBy: 'Carlos López',
-      createdDate: '2025-07-08',
-      lastModified: '2025-07-09',
-      size: '1.8 MB',
-      format: 'Excel',
-      shared: false,
-      views: 12,
-      description: 'Evaluación mensual del desempeño individual de auditores'
-    },
-    {
-      id: 3,
-      name: 'Comparativa de Ubicaciones - Semestre 1',
-      category: 'Operaciones',
-      createdBy: 'Ana Martín',
-      createdDate: '2025-07-05',
-      lastModified: '2025-07-06',
-      size: '3.1 MB',
-      format: 'PowerPoint',
-      shared: true,
-      views: 45,
-      description: 'Análisis comparativo entre diferentes ubicaciones de tienda'
-    },
-    {
-      id: 4,
-      name: 'Resumen Financiero - Mayo 2025',
-      category: 'Financiero',
-      createdBy: 'José Ruiz',
-      createdDate: '2025-06-30',
-      lastModified: '2025-07-01',
-      size: '1.2 MB',
-      format: 'PDF',
-      shared: false,
-      views: 8,
-      description: 'Resumen ejecutivo de hallazgos financieros y discrepancias'
-    },
-    {
-      id: 5,
-      name: 'Análisis de Inventario - Trimestre 2',
-      category: 'Inventario',
-      createdBy: 'Laura Sánchez',
-      createdDate: '2025-06-28',
-      lastModified: '2025-06-29',
-      size: '2.7 MB',
-      format: 'Excel',
-      shared: true,
-      views: 31,
-      description: 'Análisis detallado de discrepancias y tendencias de inventario'
+  // Cargar reportes desde la API
+  useEffect(() => {
+    loadReports();
+  }, [filterCategory]);
+
+  const loadReports = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const filters = { category: filterCategory };
+      const data = await reportService.getAllReports(filters);
+      setReports(data);
+    } catch (err) {
+      console.error('Error al cargar reportes:', err);
+      setError('Error al cargar los reportes. Verifique que el backend esté funcionando.');
+      setReports([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const categoryOptions = [
     { value: 'all', label: 'Todas las categorías' },
@@ -83,7 +40,8 @@ const SavedReports = ({ onLoadReport, onShareReport }) => {
     { value: 'Recursos Humanos', label: 'Recursos Humanos' },
     { value: 'Operaciones', label: 'Operaciones' },
     { value: 'Financiero', label: 'Financiero' },
-    { value: 'Inventario', label: 'Inventario' }
+    { value: 'Inventario', label: 'Inventario' },
+    { value: 'Cruce de Datos', label: 'Cruce de Datos' }
   ];
 
   const sortOptions = [
@@ -93,12 +51,11 @@ const SavedReports = ({ onLoadReport, onShareReport }) => {
     { value: 'size', label: 'Tamaño' }
   ];
 
-  const filteredReports = savedReports
+  const filteredReports = reports
     .filter(report => {
       const matchesSearch = report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            report.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = filterCategory === 'all' || report.category === filterCategory;
-      return matchesSearch && matchesCategory;
+      return matchesSearch;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -109,29 +66,32 @@ const SavedReports = ({ onLoadReport, onShareReport }) => {
         case 'size':
           return parseFloat(b.size) - parseFloat(a.size);
         default:
-          return new Date(b.createdDate) - new Date(a.createdDate);
+          return new Date(b.createdAt) - new Date(a.createdAt);
       }
     });
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      'Cumplimiento': 'bg-emerald-100 text-emerald-700',
-      'Recursos Humanos': 'bg-blue-100 text-blue-700',
-      'Operaciones': 'bg-purple-100 text-purple-700',
-      'Financiero': 'bg-amber-100 text-amber-700',
-      'Inventario': 'bg-cyan-100 text-cyan-700'
-    };
-    return colors[category] || 'bg-gray-100 text-gray-700';
+  const handleDeleteReport = async (reportId) => {
+    if (window.confirm('¿Está seguro de que desea eliminar este reporte?')) {
+      try {
+        await reportService.deleteReport(reportId);
+        await loadReports(); // Recargar la lista
+      } catch (err) {
+        console.error('Error al eliminar reporte:', err);
+        alert('Error al eliminar el reporte');
+      }
+    }
   };
 
-  const getFormatIcon = (format) => {
-    const icons = {
-      'PDF': 'FileText',
-      'Excel': 'FileSpreadsheet',
-      'PowerPoint': 'Presentation',
-      'CSV': 'Database'
-    };
-    return icons[format] || 'File';
+  const handleViewReport = async (report) => {
+    try {
+      // Incrementar vistas al obtener el reporte
+      await reportService.getReportById(report._id);
+      if (onLoadReport) {
+        onLoadReport(report);
+      }
+    } catch (err) {
+      console.error('Error al cargar reporte:', err);
+    }
   };
 
   return (
@@ -169,82 +129,103 @@ const SavedReports = ({ onLoadReport, onShareReport }) => {
         />
       </div>
 
-      {/* Reports Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-12">
+          <div className="flex items-center justify-center w-16 h-16 bg-muted/50 rounded-full mx-auto mb-4">
+            <Icon name="Loader2" size={24} color="var(--color-muted-foreground)" className="animate-spin" />
+          </div>
+          <p className="text-muted-foreground">Cargando reportes...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="text-center py-12">
+          <div className="flex items-center justify-center w-16 h-16 bg-destructive/10 rounded-full mx-auto mb-4">
+            <Icon name="AlertCircle" size={24} color="var(--color-destructive)" />
+          </div>
+          <h4 className="text-lg font-semibold text-foreground mb-2">Error al cargar reportes</h4>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={loadReports} variant="outline">
+            Reintentar
+          </Button>
+        </div>
+      )}
+
+      {/* Reports List */}
+      {!loading && !error && (
+        <div className="space-y-3">
         {filteredReports.map((report) => (
-          <div key={report.id} className="border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all duration-200">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-muted/50 rounded-lg">
-                  <Icon name={getFormatIcon(report.format)} size={20} color="var(--color-muted-foreground)" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-foreground mb-1">{report.name}</h4>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(report.category)}`}>
-                    {report.category}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center space-x-1">
-                {report.shared && (
-                  <div className="flex items-center justify-center w-6 h-6 bg-success/10 rounded-full">
-                    <Icon name="Share2" size={12} color="var(--color-success)" />
+          <div key={report._id} className="border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-sm transition-all duration-200">
+            <div className="flex items-center justify-between">
+              {/* Left section - Report info */}
+              <div className="flex items-center space-x-4 flex-1">
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-center w-8 h-8 bg-muted/50 rounded-lg">
+                    <Icon name={reportService.getFormatIcon(report.format)} size={16} color="var(--color-muted-foreground)" />
                   </div>
-                )}
+                  <div>
+                    <h4 className="font-semibold text-foreground text-sm">{report.name}</h4>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${reportService.getCategoryColor(report.category)}`}>
+                        {report.category}
+                      </span>
+                      {report.shared && (
+                        <span className="text-xs text-success font-medium">Activo</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-              {report.description}
-            </p>
+              {/* Middle section - Stats */}
+              <div className="flex items-center space-x-6 text-xs text-muted-foreground">
+                <div className="flex items-center space-x-1">
+                  <Icon name="Users" size={12} />
+                  <span>{report.metadata?.recipients || 3} destinatarios</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Icon name="Send" size={12} />
+                  <span>Último envío: {reportService.formatDate(report.updatedAt || report.createdAt)}</span>
+                </div>
+              </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground mb-4">
-              <div className="flex items-center space-x-1">
-                <Icon name="User" size={12} />
-                <span>{report.createdBy}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Icon name="Calendar" size={12} />
-                <span>{report.createdDate}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Icon name="HardDrive" size={12} />
-                <span>{report.size}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Icon name="Eye" size={12} />
-                <span>{report.views} vistas</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-3 border-t border-border">
-              <div className="flex space-x-2">
+              {/* Right section - Actions */}
+              <div className="flex items-center space-x-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onLoadReport(report)}
-                  iconName="Eye"
+                  onClick={() => handleViewReport(report)}
+                  iconName="Edit"
+                  className="text-xs"
                 >
-                  Ver
+                  Editar
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onShareReport(report)}
-                  iconName="Share2"
+                  onClick={() => onShareReport && onShareReport(report)}
+                  iconName="Pause"
+                  className="text-xs"
                 >
-                  Compartir
+                  Pausar
                 </Button>
-              </div>
-              <div className="flex space-x-1">
-                <Button variant="ghost" size="sm" iconName="Download" />
-                <Button variant="ghost" size="sm" iconName="Edit" />
-                <Button variant="ghost" size="sm" iconName="Trash2" />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  iconName="Trash2" 
+                  onClick={() => handleDeleteReport(report._id)}
+                  className="text-xs text-destructive hover:text-destructive"
+                >
+                  Eliminar
+                </Button>
               </div>
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {filteredReports.length === 0 && (
         <div className="text-center py-12">

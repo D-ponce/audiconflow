@@ -5,8 +5,6 @@ import Button from '../../../components/ui/Button';
 const ActionButtons = ({ 
   selectedCount, 
   onNewAudit, 
-  onExportData, 
-  onScheduleAudit, 
   onBulkArchive, 
   onBulkDelete 
 }) => {
@@ -19,25 +17,9 @@ const ActionButtons = ({
           onClick={onNewAudit}
           iconName="Plus"
           iconPosition="left"
-          className="bg-primary hover:bg-primary/90"
+          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
         >
           Nueva Auditoría
-        </Button>
-        <Button
-          variant="outline"
-          onClick={onExportData}
-          iconName="Download"
-          iconPosition="left"
-        >
-          Exportar Datos
-        </Button>
-        <Button
-          variant="outline"
-          onClick={onScheduleAudit}
-          iconName="Calendar"
-          iconPosition="left"
-        >
-          Programar Auditoría
         </Button>
       </div>
 

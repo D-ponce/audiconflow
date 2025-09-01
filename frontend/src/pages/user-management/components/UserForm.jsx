@@ -9,6 +9,7 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
     role: '',
     department: '',
     phone: '',
@@ -23,6 +24,7 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
       setFormData({
         name: user.name || '',
         email: user.email || '',
+        password: '', // No mostrar password existente por seguridad
         role: user.role || '',
         department: user.department || '',
         phone: user.phone || '',
@@ -33,6 +35,7 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
       setFormData({
         name: '',
         email: '',
+        password: '',
         role: '',
         department: '',
         phone: '',
@@ -44,11 +47,9 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
   }, [user, isOpen]);
 
   const roleOptions = [
-    { value: 'Administrador', label: 'Administrador' },
-    { value: 'Auditor Senior', label: 'Auditor Senior' },
-    { value: 'Auditor', label: 'Auditor' },
-    { value: 'Analista', label: 'Analista' },
-    { value: 'Supervisor', label: 'Supervisor' }
+    { value: 'administrador', label: 'Administrador' },
+    { value: 'auditor', label: 'Auditor' },
+    { value: 'supervisor', label: 'Supervisor' }
   ];
 
   const departmentOptions = [
@@ -67,24 +68,49 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
   ];
 
   const availablePermissions = [
-    { id: 'dashboard_view', label: 'Ver Dashboard', category: 'Dashboard' },
-    { id: 'audit_create', label: 'Crear Auditorías', category: 'Auditorías' },
-    { id: 'audit_edit', label: 'Editar Auditorías', category: 'Auditorías' },
-    { id: 'audit_delete', label: 'Eliminar Auditorías', category: 'Auditorías' },
-    { id: 'audit_view', label: 'Ver Auditorías', category: 'Auditorías' },
-    { id: 'reports_view', label: 'Ver Reportes', category: 'Reportes' },
-    { id: 'reports_export', label: 'Exportar Reportes', category: 'Reportes' },
-    { id: 'users_manage', label: 'Gestionar Usuarios', category: 'Usuarios' },
-    { id: 'users_view', label: 'Ver Usuarios', category: 'Usuarios' },
-    { id: 'files_upload', label: 'Subir Archivos', category: 'Archivos' },
-    { id: 'files_process', label: 'Procesar Archivos', category: 'Archivos' }
+    // Permisos para Auditor
+    { id: 'data_input', label: 'Ingresar Datos', category: 'Datos' },
+    { id: 'data_modify', label: 'Modificar Datos', category: 'Datos' },
+    { id: 'data_validate', label: 'Validar Datos', category: 'Datos' },
+    { id: 'reports_view', label: 'Consultar Reportes', category: 'Reportes' },
+    { id: 'reports_generate', label: 'Generar Reportes', category: 'Reportes' },
+    
+    // Permisos para Supervisor
+    { id: 'alerts_review', label: 'Revisar Alertas', category: 'Alertas' },
+    { id: 'reports_approve', label: 'Aprobar Reportes', category: 'Reportes' },
+    
+    // Permisos para Administrador
+    { id: 'users_manage', label: 'Gestionar Usuarios', category: 'Usuarios' }
   ];
 
+  // Permisos por rol
+  const getPermissionsByRole = (role) => {
+    switch (role) {
+      case 'auditor':
+        return ['data_input', 'data_modify', 'data_validate', 'reports_view', 'reports_generate'];
+      case 'supervisor':
+        return ['reports_view', 'reports_generate', 'alerts_review', 'reports_approve'];
+      case 'administrador':
+        return ['users_manage', 'alerts_review'];
+      default:
+        return [];
+    }
+  };
+
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [field]: value
+      };
+      
+      // Si cambió el rol, actualizar permisos automáticamente
+      if (field === 'role') {
+        newData.permissions = getPermissionsByRole(value);
+      }
+      
+      return newData;
+    });
     
     if (errors[field]) {
       setErrors(prev => ({
@@ -122,6 +148,13 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
 
     if (!formData.department) {
       newErrors.department = 'El departamento es requerido';
+    }
+
+    // Validar contraseña solo para usuarios nuevos
+    if (!user && !formData.password.trim()) {
+      newErrors.password = 'La contraseña es requerida para usuarios nuevos';
+    } else if (formData.password && formData.password.length < 6) {
+      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
     }
 
     setErrors(newErrors);
@@ -197,13 +230,26 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
+                  label={user ? "Nueva contraseña (opcional)" : "Contraseña"}
+                  type="password"
+                  placeholder={user ? "Dejar vacío para mantener actual" : "Mínimo 6 caracteres"}
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  error={errors.password}
+                  required={!user}
+                  description={user ? "Solo completa si deseas cambiar la contraseña" : "La contraseña debe tener al menos 6 caracteres"}
+                />
+                
+                <Input
                   label="Teléfono"
                   type="tel"
                   placeholder="+34 600 000 000"
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                 />
-                
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Select
                   label="Estado"
                   options={statusOptions}
@@ -243,6 +289,17 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-foreground">Permisos</h3>
               
+              {formData.role && (
+                <div className="bg-muted/30 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-foreground mb-2">
+                    Permisos automáticos para: {roleOptions.find(r => r.value === formData.role)?.label}
+                  </h4>
+                  <div className="text-sm text-muted-foreground">
+                    Los permisos se asignan automáticamente según el rol seleccionado
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-4">
                 {Object.entries(groupedPermissions).map(([category, permissions]) => (
                   <div key={category} className="space-y-2">
@@ -254,6 +311,7 @@ const UserForm = ({ user, onSave, onCancel, isOpen }) => {
                           label={permission.label}
                           checked={formData.permissions.includes(permission.id)}
                           onChange={(e) => handlePermissionChange(permission.id, e.target.checked)}
+                          disabled={true} // Los permisos se asignan automáticamente por rol
                         />
                       ))}
                     </div>

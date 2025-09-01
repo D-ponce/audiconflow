@@ -32,11 +32,11 @@ const ReportBuilder = ({ onGenerateReport }) => {
   ];
 
   const locationOptions = [
-    { value: 'madrid', label: 'Madrid Centro' },
-    { value: 'barcelona', label: 'Barcelona Norte' },
-    { value: 'valencia', label: 'Valencia Este' },
-    { value: 'sevilla', label: 'Sevilla Sur' },
-    { value: 'bilbao', label: 'Bilbao Centro' }
+    { value: 'casa-matriz', label: 'Casa Matriz' },
+    { value: 'centro-distribucion-s', label: 'Centro de distribución S' },
+    { value: 'centro-distribucion-p', label: 'Centro de Distribución P' },
+    { value: 'locales', label: 'Locales' },
+    { value: 'tiendas', label: 'Tiendas' }
   ];
 
   const auditTypeOptions = [

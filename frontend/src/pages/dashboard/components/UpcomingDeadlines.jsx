@@ -85,7 +85,7 @@ const UpcomingDeadlines = () => {
   };
 
   return (
-    <div className="bg-card rounded-lg border border-border p-6 shadow-minimal">
+    <div className="powerbi-card p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-foreground">Próximos Vencimientos</h3>
         <Icon name="Calendar" size={20} className="text-muted-foreground" />

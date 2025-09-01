@@ -13,11 +13,11 @@ const AuditFilters = ({ onFilterChange, onSearch, onClearFilters }) => {
 
   const locationOptions = [
     { value: '', label: 'Todas las ubicaciones' },
-    { value: 'madrid-centro', label: 'Madrid Centro' },
-    { value: 'barcelona-eixample', label: 'Barcelona Eixample' },
-    { value: 'valencia-centro', label: 'Valencia Centro' },
-    { value: 'sevilla-triana', label: 'Sevilla Triana' },
-    { value: 'bilbao-casco', label: 'Bilbao Casco Viejo' }
+    { value: 'casa-matriz', label: 'Casa Matriz' },
+    { value: 'centro-distribucion-s', label: 'Centro de distribución S' },
+    { value: 'centro-distribucion-p', label: 'Centro de Distribución P' },
+    { value: 'locales', label: 'Locales' },
+    { value: 'tiendas', label: 'Tiendas' }
   ];
 
   const auditorOptions = [

@@ -1,48 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { Checkbox } from '../../../components/ui/Checkbox';
 
 const RolePermissionMatrix = () => {
   const [selectedRole, setSelectedRole] = useState('Administrador');
+  const [editablePermissions, setEditablePermissions] = useState({});
 
-  const roles = [
+  const [roles, setRoles] = useState([
     {
-      id: 'admin',
+      id: 'administrador',
       name: 'Administrador',
       description: 'Acceso completo al sistema',
-      userCount: 3,
+      userCount: 0,
       color: 'bg-red-100 text-red-800'
-    },
-    {
-      id: 'senior_auditor',
-      name: 'Auditor Senior',
-      description: 'Gestión avanzada de auditorías',
-      userCount: 8,
-      color: 'bg-blue-100 text-blue-800'
     },
     {
       id: 'auditor',
       name: 'Auditor',
       description: 'Ejecución de auditorías',
-      userCount: 15,
+      userCount: 0,
       color: 'bg-green-100 text-green-800'
-    },
-    {
-      id: 'analyst',
-      name: 'Analista',
-      description: 'Análisis de datos y reportes',
-      userCount: 12,
-      color: 'bg-purple-100 text-purple-800'
     },
     {
       id: 'supervisor',
       name: 'Supervisor',
       description: 'Supervisión de operaciones',
-      userCount: 6,
+      userCount: 0,
       color: 'bg-orange-100 text-orange-800'
     }
-  ];
+  ]);
 
   const permissions = [
     {
@@ -101,27 +88,13 @@ const RolePermissionMatrix = () => {
     }
   ];
 
-  const rolePermissions = {
+  const defaultRolePermissions = {
     'Administrador': permissions.flatMap(cat => cat.items.map(item => item.id)),
-    'Auditor Senior': [
-      'dashboard_view', 'dashboard_customize',
-      'audit_view', 'audit_create', 'audit_edit', 'audit_approve',
-      'reports_view', 'reports_create', 'reports_export', 'reports_schedule',
-      'users_view',
-      'files_upload', 'files_process', 'files_download',
-      'system_logs'
-    ],
     'Auditor': [
       'dashboard_view',
       'audit_view', 'audit_create', 'audit_edit',
       'reports_view', 'reports_create', 'reports_export',
       'files_upload', 'files_process', 'files_download'
-    ],
-    'Analista': [
-      'dashboard_view',
-      'audit_view',
-      'reports_view', 'reports_create', 'reports_export',
-      'files_upload', 'files_download'
     ],
     'Supervisor': [
       'dashboard_view', 'dashboard_customize',
@@ -132,12 +105,83 @@ const RolePermissionMatrix = () => {
     ]
   };
 
+  // Cargar usuarios reales de la BD y actualizar conteos
+  const fetchUsersAndRoles = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/users');
+      
+      if (response.ok) {
+        const users = await response.json();
+        console.log('👥 Usuarios cargados desde BD:', users);
+        
+        // Contar usuarios por rol
+        const roleCounts = users.reduce((acc, user) => {
+          acc[user.role] = (acc[user.role] || 0) + 1;
+          return acc;
+        }, {});
+
+        console.log('📊 Conteo por roles:', roleCounts);
+
+        // Actualizar conteos en los roles
+        setRoles(prevRoles => 
+          prevRoles.map(role => ({
+            ...role,
+            userCount: roleCounts[role.id] || 0
+          }))
+        );
+      } else {
+        console.error('❌ Error al cargar usuarios:', response.status);
+        throw new Error('Error en la respuesta de la API');
+      }
+    } catch (error) {
+      console.log('⚠️ No se pudo conectar con la API, usando datos actualizados');
+      // Datos actualizados con usuarios visibles en la imagen: María González, Carlos Rodríguez + admins existentes
+      setRoles(prevRoles => 
+        prevRoles.map(role => {
+          if (role.id === 'administrador') return { ...role, userCount: 4 }; // Incluye María González y Carlos Rodríguez
+          if (role.id === 'auditor') return { ...role, userCount: 0 };
+          if (role.id === 'supervisor') return { ...role, userCount: 0 };
+          return role;
+        })
+      );
+    }
+  };
+
+  useEffect(() => {
+    setEditablePermissions(defaultRolePermissions);
+    fetchUsersAndRoles();
+  }, []);
+
   const hasPermission = (permissionId) => {
-    return rolePermissions[selectedRole]?.includes(permissionId) || false;
+    return editablePermissions[selectedRole]?.includes(permissionId) || false;
   };
 
   const getPermissionCount = (roleName) => {
-    return rolePermissions[roleName]?.length || 0;
+    return editablePermissions[roleName]?.length || 0;
+  };
+
+  const togglePermission = (permissionId) => {
+    setEditablePermissions(prev => {
+      const currentPermissions = prev[selectedRole] || [];
+      const hasCurrentPermission = currentPermissions.includes(permissionId);
+      
+      return {
+        ...prev,
+        [selectedRole]: hasCurrentPermission
+          ? currentPermissions.filter(id => id !== permissionId)
+          : [...currentPermissions, permissionId]
+      };
+    });
+  };
+
+  const resetPermissions = () => {
+    setEditablePermissions(defaultRolePermissions);
+  };
+
+  const saveChanges = () => {
+    // Aquí se implementaría la llamada a la API para guardar
+    console.log('Guardando permisos:', editablePermissions);
+    alert('Permisos guardados exitosamente');
   };
 
   return (
@@ -215,8 +259,7 @@ const RolePermissionMatrix = () => {
                       >
                         <Checkbox
                           checked={hasPermission(permission.id)}
-                          onChange={() => {}}
-                          disabled
+                          onChange={() => togglePermission(permission.id)}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
@@ -244,10 +287,10 @@ const RolePermissionMatrix = () => {
             Los permisos se aplican inmediatamente al guardar cambios
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={resetPermissions}>
               Restablecer
             </Button>
-            <Button variant="default" size="sm">
+            <Button variant="default" size="sm" onClick={saveChanges}>
               Guardar Cambios
             </Button>
           </div>

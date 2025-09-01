@@ -46,7 +46,7 @@ const LoginScreen = () => {
       <SecurityBadge />
       
       {/* Mobile Responsive Adjustments */}
-      <style jsx>{`
+      <style>{`
         @media (max-width: 640px) {
           .min-h-screen {
             padding: 1rem;

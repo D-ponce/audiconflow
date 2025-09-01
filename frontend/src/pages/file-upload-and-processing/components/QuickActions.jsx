@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "../../../components/ui/Button";
 import Icon from "../../../components/AppIcon";
 
 const QuickActions = ({ onProcessAnother }) => {
+  const navigate = useNavigate();
   const [crossResults, setCrossResults] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [selectedKey, setSelectedKey] = useState("RUT");
+  const [selectedResult, setSelectedResult] = useState("Tipo de cuenta");
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [availableFiles, setAvailableFiles] = useState([]);
@@ -31,7 +34,7 @@ const QuickActions = ({ onProcessAnother }) => {
     );
   };
 
-  // ✅ Cruce de archivos
+  // ✅ Cruce de archivos (campo clave + resultado asignado)
   const handleCrossCheck = async () => {
     if (selectedFiles.length < 2) {
       alert("⚠️ Selecciona al menos 2 archivos para cruzar");
@@ -42,11 +45,30 @@ const QuickActions = ({ onProcessAnother }) => {
       const res = await fetch("http://localhost:5000/api/cross-check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileIds: selectedFiles, key: selectedKey }),
+        body: JSON.stringify({
+          fileIds: selectedFiles,
+          key: selectedKey,
+          result: selectedResult,
+        }),
       });
       const data = await res.json();
+      console.log("✅ Datos del cruce recibidos:", data);
       setCrossResults(data);
       setIsModalOpen(false);
+      
+      // Redirigir automáticamente a reportes con los resultados
+      console.log("🔄 Navegando a reportes...");
+      navigate('/reports-and-analytics', { 
+        state: { 
+          crossResults: data,
+          selectedKey,
+          selectedResult,
+          selectedFiles: selectedFiles.map(id => 
+            availableFiles.find(f => f.id === id)?.filename || id
+          )
+        } 
+      });
+      console.log("✅ Navegación completada");
     } catch (err) {
       console.error("❌ Error en cruce de información:", err);
     } finally {
@@ -148,27 +170,35 @@ const QuickActions = ({ onProcessAnother }) => {
               )}
             </div>
 
+            {/* Seleccionar campo clave y resultado */}
             <div className="border p-3 rounded-md mb-4">
               <p className="text-sm font-medium mb-2">Selecciona campo clave:</p>
               <select
                 value={selectedKey}
                 onChange={(e) => setSelectedKey(e.target.value)}
-                className="w-full border rounded-md px-2 py-1 text-sm"
+                className="w-full border rounded-md px-2 py-1 text-sm mb-3"
               >
                 <option value="RUT">RUT</option>
                 <option value="Correo">Correo</option>
                 <option value="ID">ID</option>
               </select>
-            </div>
 
-            <div className="flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-                Cancelar
-              </Button>
+              <p className="text-sm font-medium mb-2">Asignar Resultado:</p>
+              <select
+                value={selectedResult}
+                onChange={(e) => setSelectedResult(e.target.value)}
+                className="w-full border rounded-md px-2 py-1 text-sm mb-3"
+              >
+                <option value="Tipo de cuenta">Tipo de cuenta</option>
+                <option value="Fecha Finiquito">Fecha Finiquito</option>
+                <option value="Estado">Estado</option>
+              </select>
+
               <Button
                 variant="default"
                 onClick={handleCrossCheck}
                 disabled={loading}
+                fullWidth
               >
                 {loading ? "Cruzando..." : "Cruzar Información"}
               </Button>
@@ -180,13 +210,35 @@ const QuickActions = ({ onProcessAnother }) => {
       {/* Resultados */}
       {crossResults && (
         <div className="mt-6">
-          <h4 className="font-semibold text-foreground mb-2">
-            Resultados del cruce ({crossResults.results.length} registros)
-          </h4>
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-semibold text-foreground">
+              Resultados del cruce ({crossResults.results.length} registros)
+            </h4>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleDownloadReport}
+                iconName="Download"
+                iconPosition="left"
+                size="sm"
+              >
+                Exportar Excel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.open(`http://localhost:5000/api/cross-check/report-pdf`, '_blank')}
+                iconName="FileText"
+                iconPosition="left"
+                size="sm"
+              >
+                Informe PDF
+              </Button>
+            </div>
+          </div>
           <div className="space-y-2 p-3 border rounded-md bg-muted/20 text-sm">
             {crossResults.results.map((r, idx) => (
               <p key={idx}>
-                {`${selectedKey}: ${r.valor} → ${r.resultado} ${
+                {`${selectedKey}: ${r.valor} → ${selectedResult}: ${r.resultado} ${
                   r.archivos ? `(Archivos: ${r.archivos.join(", ")})` : ""
                 }`}
               </p>

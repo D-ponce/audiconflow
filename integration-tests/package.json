@@ -1,0 +1,25 @@
+{
+  "name": "audiconflow-integration-tests",
+  "version": "1.0.0",
+  "description": "Pruebas de integración para AudiconFlow",
+  "type": "module",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "setup": "node setup/setupTestEnv.js",
+    "teardown": "node setup/teardownTestEnv.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "mongodb": "^6.3.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.0",
+    "@babel/preset-env": "^7.22.0",
+    "babel-jest": "^29.5.0",
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3"
+  }
+}

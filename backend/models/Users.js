@@ -2,9 +2,24 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, default: "user" }
+  role: { 
+    type: String, 
+    enum: ["administrador", "auditor", "supervisor"],
+    default: "auditor" 
+  },
+  department: { type: String },
+  phone: { type: String },
+  status: { 
+    type: String, 
+    enum: ["Activo", "Inactivo", "Suspendido"],
+    default: "Activo" 
+  },
+  permissions: [{ type: String }],
+  lastLogin: { type: Date },
+  createdAt: { type: Date, default: Date.now }
 });
 
 // Middleware para encriptar la contraseña antes de guardar

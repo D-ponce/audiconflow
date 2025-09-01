@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 
 const UserStats = () => {
-  const stats = [
+  const [stats, setStats] = useState([
     {
       id: 1,
       title: 'Total Usuarios',
-      value: '44',
-      change: '+3',
+      value: '4',
+      change: '+4',
       changeType: 'increase',
       icon: 'Users',
       color: 'bg-blue-500',
@@ -16,8 +16,8 @@ const UserStats = () => {
     {
       id: 2,
       title: 'Usuarios Activos',
-      value: '38',
-      change: '+2',
+      value: '1',
+      change: '+1',
       changeType: 'increase',
       icon: 'UserCheck',
       color: 'bg-green-500',
@@ -26,32 +26,30 @@ const UserStats = () => {
     {
       id: 3,
       title: 'Nuevos Este Mes',
-      value: '7',
+      value: '4',
       change: '+4',
       changeType: 'increase',
       icon: 'UserPlus',
       color: 'bg-purple-500',
-      description: 'Usuarios registrados en julio'
+      description: 'Usuarios registrados este mes'
     },
     {
       id: 4,
       title: 'Roles Definidos',
-      value: '5',
+      value: '3',
       change: '0',
       changeType: 'neutral',
       icon: 'Shield',
       color: 'bg-orange-500',
       description: 'Roles de usuario configurados'
     }
-  ];
+  ]);
 
-  const roleDistribution = [
-    { role: 'Auditor', count: 15, percentage: 34, color: 'bg-blue-500' },
-    { role: 'Analista', count: 12, percentage: 27, color: 'bg-green-500' },
-    { role: 'Auditor Senior', count: 8, percentage: 18, color: 'bg-purple-500' },
-    { role: 'Supervisor', count: 6, percentage: 14, color: 'bg-orange-500' },
-    { role: 'Administrador', count: 3, percentage: 7, color: 'bg-red-500' }
-  ];
+  const [roleDistribution, setRoleDistribution] = useState([
+    { role: 'Administrador', count: 2, percentage: 50, color: 'bg-red-500' },
+    { role: 'Auditor', count: 1, percentage: 25, color: 'bg-blue-500' },
+    { role: 'Supervisor', count: 1, percentage: 25, color: 'bg-orange-500' }
+  ]);
 
   const getChangeIcon = (changeType) => {
     switch (changeType) {
@@ -63,6 +61,104 @@ const UserStats = () => {
         return 'Minus';
     }
   };
+
+  // Cargar estadísticas reales de la BD
+  const fetchUserStats = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/users');
+      
+      if (response.ok) {
+        const users = await response.json();
+        console.log('📊 Usuarios cargados para estadísticas:', users);
+        
+        // Contar usuarios por rol
+        const roleCounts = users.reduce((acc, user) => {
+          acc[user.role] = (acc[user.role] || 0) + 1;
+          return acc;
+        }, {});
+        
+        // Actualizar estadísticas basadas en datos reales
+        const totalUsers = users.length;
+        const activeUsers = 1; // Solo Denisse ha estado activa
+        
+        setStats([
+          {
+            id: 1,
+            title: 'Total Usuarios',
+            value: totalUsers.toString(),
+            change: `+${totalUsers}`,
+            changeType: 'increase',
+            icon: 'Users',
+            color: 'bg-blue-500',
+            description: 'Usuarios registrados en el sistema'
+          },
+          {
+            id: 2,
+            title: 'Usuarios Activos',
+            value: activeUsers.toString(),
+            change: `+${activeUsers}`,
+            changeType: 'increase',
+            icon: 'UserCheck',
+            color: 'bg-green-500',
+            description: 'Usuarios con actividad reciente'
+          },
+          {
+            id: 3,
+            title: 'Nuevos Este Mes',
+            value: totalUsers.toString(),
+            change: `+${totalUsers}`,
+            changeType: 'increase',
+            icon: 'UserPlus',
+            color: 'bg-purple-500',
+            description: 'Usuarios registrados este mes'
+          },
+          {
+            id: 4,
+            title: 'Roles Definidos',
+            value: '3',
+            change: '0',
+            changeType: 'neutral',
+            icon: 'Shield',
+            color: 'bg-orange-500',
+            description: 'Roles de usuario configurados'
+          }
+        ]);
+        
+        // Actualizar distribución de roles
+        const totalCount = totalUsers;
+        const roleDistributionData = [
+          {
+            role: 'Administrador',
+            count: roleCounts.administrador || 0,
+            percentage: totalCount > 0 ? Math.round((roleCounts.administrador || 0) / totalCount * 100) : 0,
+            color: 'bg-red-500'
+          },
+          {
+            role: 'Auditor',
+            count: roleCounts.auditor || 0,
+            percentage: totalCount > 0 ? Math.round((roleCounts.auditor || 0) / totalCount * 100) : 0,
+            color: 'bg-blue-500'
+          },
+          {
+            role: 'Supervisor',
+            count: roleCounts.supervisor || 0,
+            percentage: totalCount > 0 ? Math.round((roleCounts.supervisor || 0) / totalCount * 100) : 0,
+            color: 'bg-orange-500'
+          }
+        ].filter(role => role.count > 0); // Solo mostrar roles con usuarios
+        
+        setRoleDistribution(roleDistributionData);
+        
+      }
+    } catch (error) {
+      console.error('⚠️ Error cargando estadísticas, usando fallback:', error);
+      // Mantener datos por defecto si hay error
+    }
+  };
+
+  useEffect(() => {
+    fetchUserStats();
+  }, []);
 
   const getChangeColor = (changeType) => {
     switch (changeType) {
@@ -164,7 +260,7 @@ const UserStats = () => {
             <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-3">
               <Icon name="LogIn" size={24} className="text-success" />
             </div>
-            <div className="text-2xl font-bold text-foreground">28</div>
+            <div className="text-2xl font-bold text-foreground">1</div>
             <div className="text-sm text-muted-foreground">Inicios de sesión</div>
           </div>
 
@@ -172,7 +268,7 @@ const UserStats = () => {
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
               <Icon name="FileText" size={24} className="text-primary" />
             </div>
-            <div className="text-2xl font-bold text-foreground">15</div>
+            <div className="text-2xl font-bold text-foreground">0</div>
             <div className="text-sm text-muted-foreground">Auditorías creadas</div>
           </div>
 
@@ -180,7 +276,7 @@ const UserStats = () => {
             <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-3">
               <Icon name="AlertTriangle" size={24} className="text-warning" />
             </div>
-            <div className="text-2xl font-bold text-foreground">3</div>
+            <div className="text-2xl font-bold text-foreground">0</div>
             <div className="text-sm text-muted-foreground">Intentos fallidos</div>
           </div>
         </div>

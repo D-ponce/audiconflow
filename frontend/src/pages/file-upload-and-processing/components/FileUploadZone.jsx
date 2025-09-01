@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const FileUploadZone = ({ acceptedFormats, maxFileSize }) => {
+const FileUploadZone = ({ acceptedFormats, maxFileSize, auditData, onUploadSuccess, onFileUploaded, auditId }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -62,6 +62,19 @@ const FileUploadZone = ({ acceptedFormats, maxFileSize }) => {
       formData.append("files", file);
     });
 
+    // Si hay datos de auditoría, incluirlos en el upload
+    const currentAuditId = auditId || auditData?._id || auditData?.auditId;
+    if (currentAuditId) {
+      formData.append("auditId", currentAuditId);
+      if (auditData) {
+        formData.append("auditInfo", JSON.stringify({
+          auditId: auditData.auditId,
+          type: auditData.type,
+          location: auditData.location
+        }));
+      }
+    }
+
     try {
       setUploading(true);
       setMessage("");
@@ -77,7 +90,16 @@ const FileUploadZone = ({ acceptedFormats, maxFileSize }) => {
         setMessage(`❌ Error: ${data.error || "No se pudo subir el archivo"}`);
       } else {
         setMessage(`✅ ${data.message || "Archivos subidos correctamente"}`);
+        
+        // Crear registro de historial para cada archivo subido
+        if (data.files && onFileUploaded) {
+          data.files.forEach(fileData => {
+            onFileUploaded(fileData);
+          });
+        }
+        
         fetchFiles();
+        if (onUploadSuccess) onUploadSuccess();
       }
     } catch (err) {
       console.error("❌ Error al subir archivos:", err);

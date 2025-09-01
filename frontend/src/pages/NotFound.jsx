@@ -11,11 +11,12 @@ const NotFound = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
-      <div className="text-center max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-50 via-pink-50/30 to-rose-50/20 relative p-4">
+      <div className="absolute inset-0 bg-subtle-pattern opacity-30"></div>
+      <div className="text-center max-w-md relative z-10">
         <div className="flex justify-center mb-6">
-          <div className="relative">
-            <h1 className="text-9xl font-bold text-primary opacity-20">404</h1>
+          <div className="relative glass-effect rounded-2xl p-8 shadow-2xl">
+            <h1 className="text-9xl font-bold text-gradient">404</h1>
           </div>
         </div>
 

@@ -6,7 +6,7 @@ import Select from '../../../components/ui/Select';
 
 const VisualizationArea = ({ reportData, reportType }) => {
   const [chartType, setChartType] = useState('bar');
-  const [selectedMetric, setSelectedMetric] = useState('compliance');
+  const [selectedMetric, setSelectedMetric] = useState(reportType === 'cross-check' ? 'cross-results' : 'compliance');
 
   const complianceData = [
     { month: 'Ene', cumplimiento: 85, objetivo: 90, auditorias: 45 },
@@ -27,10 +27,11 @@ const VisualizationArea = ({ reportData, reportType }) => {
   ];
 
   const locationData = [
-    { name: 'Madrid Centro', value: 35, color: '#2563EB' },
-    { name: 'Barcelona Norte', value: 28, color: '#059669' },
-    { name: 'Valencia Este', value: 22, color: '#D97706' },
-    { name: 'Sevilla Sur', value: 15, color: '#DC2626' }
+    { name: 'Casa Matriz', value: 35, color: '#2563EB' },
+    { name: 'Centro de distribución S', value: 28, color: '#059669' },
+    { name: 'Centro de Distribución P', value: 22, color: '#D97706' },
+    { name: 'Locales', value: 18, color: '#7C3AED' },
+    { name: 'Tiendas', value: 15, color: '#DC2626' }
   ];
 
   const trendData = [
@@ -47,15 +48,93 @@ const VisualizationArea = ({ reportData, reportType }) => {
     { value: 'pie', label: 'Gráfico Circular' }
   ];
 
-  const metricOptions = [
+  const metricOptions = reportType === 'cross-check' ? [
+    { value: 'cross-results', label: 'Resultados del Cruce' },
+    { value: 'compliance', label: 'Cumplimiento' },
+    { value: 'performance', label: 'Rendimiento' },
+    { value: 'trends', label: 'Tendencias' },
+    { value: 'locations', label: 'Ubicaciones' }
+  ] : [
     { value: 'compliance', label: 'Cumplimiento' },
     { value: 'performance', label: 'Rendimiento' },
     { value: 'trends', label: 'Tendencias' },
     { value: 'locations', label: 'Ubicaciones' }
   ];
 
+  // Procesar datos del cruce para visualización
+  const processCrossData = () => {
+    if (!reportData || !reportData.results) return [];
+    
+    const coincidencias = reportData.results.filter(r => r.resultado === 'hay coincidencia').length;
+    const noCoincidencias = reportData.results.filter(r => r.resultado === 'no hay coincidencia').length;
+    
+    return [
+      { name: 'Hay Coincidencia', value: coincidencias, color: '#059669' },
+      { name: 'No Hay Coincidencia', value: noCoincidencias, color: '#DC2626' }
+    ];
+  };
+
+  const getCrossStats = () => {
+    if (!reportData || !reportData.results) return { total: 0, coincidencias: 0, porcentaje: 0 };
+    
+    const total = reportData.results.length;
+    const coincidencias = reportData.results.filter(r => r.resultado === 'hay coincidencia').length;
+    const porcentaje = total > 0 ? Math.round((coincidencias / total) * 100) : 0;
+    
+    return { total, coincidencias, porcentaje };
+  };
+
   const renderChart = () => {
     switch (selectedMetric) {
+      case 'cross-results':
+        const crossData = processCrossData();
+        if (chartType === 'pie') {
+          return (
+            <ResponsiveContainer width="100%" height={400}>
+              <PieChart>
+                <Pie
+                  data={crossData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={120}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {crossData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'var(--color-card)', 
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '8px'
+                  }} 
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          );
+        } else {
+          return (
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={crossData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="name" stroke="#64748B" />
+                <YAxis stroke="#64748B" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'var(--color-card)', 
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '8px'
+                  }} 
+                />
+                <Bar dataKey="value" fill="#2563EB" />
+              </BarChart>
+            </ResponsiveContainer>
+          );
+        }
       case 'compliance':
         if (chartType === 'bar') {
           return (
@@ -233,22 +312,45 @@ const VisualizationArea = ({ reportData, reportType }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-        <div className="bg-muted/50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-primary mb-1">94%</div>
-          <div className="text-sm text-muted-foreground">Cumplimiento Promedio</div>
-        </div>
-        <div className="bg-muted/50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-success mb-1">142</div>
-          <div className="text-sm text-muted-foreground">Auditorías Completadas</div>
-        </div>
-        <div className="bg-muted/50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-warning mb-1">8</div>
-          <div className="text-sm text-muted-foreground">Incidencias Pendientes</div>
-        </div>
-        <div className="bg-muted/50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-accent mb-1">4.7</div>
-          <div className="text-sm text-muted-foreground">Calificación Promedio</div>
-        </div>
+        {reportType === 'cross-check' ? (
+          <>
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-primary mb-1">{getCrossStats().total}</div>
+              <div className="text-sm text-muted-foreground">Total de Registros</div>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-success mb-1">{getCrossStats().coincidencias}</div>
+              <div className="text-sm text-muted-foreground">Con Coincidencia</div>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-warning mb-1">{getCrossStats().total - getCrossStats().coincidencias}</div>
+              <div className="text-sm text-muted-foreground">Sin Coincidencia</div>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-accent mb-1">{getCrossStats().porcentaje}%</div>
+              <div className="text-sm text-muted-foreground">Porcentaje de Coincidencia</div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-primary mb-1">94%</div>
+              <div className="text-sm text-muted-foreground">Cumplimiento Promedio</div>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-success mb-1">142</div>
+              <div className="text-sm text-muted-foreground">Auditorías Completadas</div>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-warning mb-1">8</div>
+              <div className="text-sm text-muted-foreground">Incidencias Pendientes</div>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-accent mb-1">4.7</div>
+              <div className="text-sm text-muted-foreground">Calificación Promedio</div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

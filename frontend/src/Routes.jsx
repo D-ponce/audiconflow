@@ -8,6 +8,7 @@ import LoginScreen from "./pages/login-screen";
 import Dashboard from "./pages/dashboard";
 import FileUploadAndProcessing from "./pages/file-upload-and-processing";
 import AuditRecordsManagement from "./pages/audit-records-management";
+import AuditEdit from "./pages/audit-edit";
 import UserManagement from "./pages/user-management";
 import ReportsAndAnalytics from "./pages/reports-and-analytics";
 import NotFound from "./pages/NotFound";
@@ -28,6 +29,8 @@ const Routes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/file-upload-and-processing" element={<FileUploadAndProcessing />} />
           <Route path="/audit-records-management" element={<AuditRecordsManagement />} />
+          <Route path="/audit-edit" element={<AuditEdit />} />
+          <Route path="/audit-edit/:auditId" element={<AuditEdit />} />
           <Route path="/user-management" element={<UserManagement />} />
           <Route path="/reports-and-analytics" element={<ReportsAndAnalytics />} />
 

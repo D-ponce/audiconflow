@@ -33,18 +33,30 @@ router.post("/login", async (req, res) => {
   const { user, password } = req.body; // "user" puede ser email o role
 
   try {
+    console.log("🔍 Intento de login:", { user, password: "***" });
+    
     const dbUser = await User.findOne({
       $or: [{ email: user }, { role: user }],
     });
+
+    console.log("🔍 Usuario encontrado:", dbUser ? { email: dbUser.email, role: dbUser.role } : "No encontrado");
 
     if (!dbUser) {
       return res.status(401).json({ error: "Usuario no encontrado" });
     }
 
+    console.log("🔍 Password hash en BD:", dbUser.password);
     const isMatch = await bcrypt.compare(password, dbUser.password);
+    console.log("🔍 Password match:", isMatch);
+    
     if (!isMatch) {
       return res.status(401).json({ error: "Contraseña incorrecta" });
     }
+
+    // Actualizar último acceso
+    await User.findByIdAndUpdate(dbUser._id, { 
+      lastLogin: new Date() 
+    });
 
     res.json({
       email: dbUser.email,
