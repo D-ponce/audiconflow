@@ -78,20 +78,28 @@ const UserActivityLog = () => {
     );
   };
 
-  const formatTimestamp = (timestamp) => {
+  const formatLastLogin = (date) => {
+    if (!date) return 'Nunca';
+    
     const now = new Date();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const loginDate = new Date(date);
+    const diffInMs = now - loginDate;
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
-    if (minutes < 60) {
-      return `Hace ${minutes} minutos`;
-    } else if (hours < 24) {
-      return `Hace ${hours} horas`;
-    } else {
-      return `Hace ${days} días`;
-    }
+    if (diffInMinutes < 1) return 'Hace un momento';
+    if (diffInMinutes < 60) return `Hace ${diffInMinutes} minuto${diffInMinutes > 1 ? 's' : ''}`;
+    if (diffInHours < 24) return `Hace ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`;
+    if (diffInDays < 30) return `Hace ${diffInDays} día${diffInDays > 1 ? 's' : ''}`;
+    
+    return loginDate.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   // Cargar usuarios reales de la BD
@@ -114,28 +122,20 @@ const UserActivityLog = () => {
         
         setUserOptions(realUserOptions);
         
-        // Generar logs de actividad basados en usuarios reales y sus roles
+        // Generar logs de actividad basados en usuarios reales y su lastLogin
         const realLogs = users.map((user, index) => {
           const userName = user.name || user.email;
-          let activity, description;
+          let activity, description, timestamp;
           
-          // Actividades basadas en lo que los usuarios realmente han hecho
-          if (userName === 'auditor@audiconflow.com') {
-            activity = 'login';
-            description = 'Usuario creado - Nunca ha accedido al sistema';
-          } else if (userName === 'supervisor@audiconflow.com') {
-            activity = 'login';
-            description = 'Usuario creado - Nunca ha accedido al sistema';
-          } else if (userName === 'admin@audiconflow.com') {
-            activity = 'login';
-            description = 'Usuario creado - Nunca ha accedido al sistema';
-          } else if (userName === 'Denisse' || userName.includes('denisse')) {
+          // Usar el lastLogin real del usuario si existe
+          if (user.lastLogin) {
             activity = 'login';
             description = 'Último acceso al sistema - Gestión de usuarios';
+            timestamp = new Date(user.lastLogin);
           } else {
-            // Para usuarios que no han tenido actividad real
             activity = 'login';
-            description = 'Usuario registrado - Sin actividad reciente';
+            description = 'Usuario creado - Nunca ha accedido al sistema';
+            timestamp = null; // No hay timestamp si nunca se ha logueado
           }
           
           return {
@@ -143,9 +143,8 @@ const UserActivityLog = () => {
             user: userName,
             activity: activity,
             description: description,
-            timestamp: userName === 'Denisse' || userName.includes('denisse') ? 
-              new Date(Date.now() - 1000 * 60 * 30) : // Hace 30 minutos para Denisse
-              new Date(Date.now() - 1000 * 60 * 60 * 24 * (index + 1)), // Hace días para usuarios sin actividad
+            timestamp: timestamp,
+            lastLogin: user.lastLogin, // Agregar campo lastLogin real
             ip: `192.168.1.${100 + index}`,
             device: index % 2 === 0 ? 'Chrome en Windows' : 'Firefox en Windows',
             status: 'success'
@@ -178,24 +177,29 @@ const UserActivityLog = () => {
       setUserOptions(fallbackUserOptions);
       
       const fallbackLogs = fallbackUsers.map((user, index) => {
-        let activity, description;
+        let activity, description, lastLogin;
         
         // Descripciones basadas en actividad real de usuarios
         if (user.name === 'auditor@audiconflow.com') {
           activity = 'login';
           description = 'Usuario creado - Nunca ha accedido al sistema';
+          lastLogin = null;
         } else if (user.name === 'supervisor@audiconflow.com') {
           activity = 'login';
           description = 'Usuario creado - Nunca ha accedido al sistema';
+          lastLogin = null;
         } else if (user.name === 'admin@audiconflow.com') {
           activity = 'login';
           description = 'Usuario creado - Nunca ha accedido al sistema';
+          lastLogin = null;
         } else if (user.name === 'Denisse') {
           activity = 'login';
           description = 'Último acceso al sistema - Gestión de usuarios';
+          lastLogin = new Date(Date.now() - 1000 * 60 * 30); // Hace 30 minutos para Denisse
         } else {
           activity = 'login';
           description = 'Usuario registrado - Sin actividad reciente';
+          lastLogin = null;
         }
         
         return {
@@ -203,9 +207,8 @@ const UserActivityLog = () => {
           user: user.name,
           activity: activity,
           description: description,
-          timestamp: user.name === 'Denisse' ? 
-            new Date(Date.now() - 1000 * 60 * 30) : // Hace 30 minutos para Denisse
-            new Date(Date.now() - 1000 * 60 * 60 * 24 * (index + 1)), // Hace días para usuarios sin actividad
+          timestamp: lastLogin,
+          lastLogin: lastLogin, // Usar el mismo valor para consistencia
           ip: `192.168.1.${100 + index}`,
           device: index % 2 === 0 ? 'Chrome en Windows' : 'Firefox en Windows',
           status: 'success'
@@ -302,7 +305,7 @@ const UserActivityLog = () => {
                       </div>
                     </td>
                     <td className="p-4 text-foreground">{log.description}</td>
-                    <td className="p-4 text-muted-foreground">{formatTimestamp(log.timestamp)}</td>
+                    <td className="p-4 text-muted-foreground">{formatLastLogin(log.lastLogin)}</td>
                     <td className="p-4">
                       <div className="text-sm">
                         <div className="text-foreground">{log.ip}</div>
@@ -327,7 +330,7 @@ const UserActivityLog = () => {
                     </div>
                     <div>
                       <div className="font-medium text-foreground">{log.user}</div>
-                      <div className="text-sm text-muted-foreground">{formatTimestamp(log.timestamp)}</div>
+                      <div className="text-sm text-muted-foreground">{formatLastLogin(log.lastLogin)}</div>
                     </div>
                   </div>
                   {getStatusBadge(log.status)}
