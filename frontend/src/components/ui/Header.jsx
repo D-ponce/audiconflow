@@ -133,13 +133,15 @@ const Header = () => {
               </Link>
             )}
 
-            {/* Iniciar Auditoría Button */}
-            <Button
-              onClick={() => setShowNewAuditModal(true)}
-              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg flex items-center transition-all duration-300 hover:scale-105 shadow-lg font-semibold"
-            >
-              <span>Nueva Auditoría</span>
-            </Button>
+            {/* Iniciar Auditoría Button - Solo para usuarios no administradores */}
+            {userRole !== "administrador" && (
+              <Button
+                onClick={() => setShowNewAuditModal(true)}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg flex items-center transition-all duration-300 hover:scale-105 shadow-lg font-semibold"
+              >
+                <span>Nueva Auditoría</span>
+              </Button>
+            )}
 
             {/* Logout Button */}
             <Button
@@ -199,16 +201,18 @@ const Header = () => {
                 <span>Dashboard</span>
               </Link>
 
-              {/* Iniciar Auditoría Button (mobile) */}
-              <button
-                onClick={() => {
-                  setShowNewAuditModal(true);
-                  toggleMobileMenu();
-                }}
-                className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600 transition-colors"
-              >
-                <span className="font-semibold">Nueva Auditoría</span>
-              </button>
+              {/* Iniciar Auditoría Button (mobile) - Solo para usuarios no administradores */}
+              {userRole !== "administrador" && (
+                <button
+                  onClick={() => {
+                    setShowNewAuditModal(true);
+                    toggleMobileMenu();
+                  }}
+                  className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600 transition-colors"
+                >
+                  <span className="font-semibold">Nueva Auditoría</span>
+                </button>
+              )}
 
               {navigationItems
                 .filter(item => !(item.restricted && userRole !== "administrador"))

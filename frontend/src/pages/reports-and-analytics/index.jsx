@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 import Header from '../../components/ui/Header';
+import Footer from '../../components/ui/Footer';
 import crossResultService from '../../services/crossResultService';
 
 import Button from '../../components/ui/Button';
@@ -10,7 +11,6 @@ import VisualizationArea from './components/VisualizationArea';
 import ExportOptions from './components/ExportOptions';
 import ReportScheduler from './components/ReportScheduler';
 import SavedReports from './components/SavedReports';
-import AdvancedFilters from './components/AdvancedFilters';
 
 const ReportsAndAnalytics = () => {
   // Recibir datos del cruce desde la navegación
@@ -130,15 +130,25 @@ const ReportsAndAnalytics = () => {
           originalName: file,
           recordCount: crossResults.results?.length || 0
         })) || [],
-        results: crossResults.results.map(result => ({
-          keyValue: result.valor || result.key,
-          resultValue: result.resultadoAsignado || result.value || 'N/A',
-          status: result.resultado || result.status,
-          sourceFiles: result.archivos || result.files || [],
-          metadata: {
-            originalData: result
+        results: crossResults.results.map(result => {
+          // Mapear el estado correctamente
+          let status = result.resultado || result.status || '';
+          if (status.toLowerCase().includes('coincidencia') || status.toLowerCase().includes('match')) {
+            status = 'hay coincidencia';
+          } else {
+            status = 'no hay coincidencia';
           }
-        })),
+          
+          return {
+            keyValue: result.valor || result.key || '',
+            resultValue: result.resultadoAsignado || result.value || 'N/A',
+            status: status,
+            sourceFiles: result.archivos || result.files || [],
+            metadata: {
+              originalData: result
+            }
+          };
+        }),
         executedBy: currentUser
       };
 
@@ -428,76 +438,7 @@ const ReportsAndAnalytics = () => {
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                <div className="p-4">
-                  <AdvancedFilters 
-                    onApplyFilters={handleApplyFilters}
-                    onResetFilters={handleResetFilters}
-                  />
-                </div>
-
-                <div className="p-4 border-t border-border">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Accesos Rápidos</h3>
-                  <div className="space-y-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      fullWidth
-                      iconName="TrendingUp"
-                      iconPosition="left"
-                      className="justify-start"
-                    >
-                      Tendencias de Cumplimiento
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      fullWidth
-                      iconName="Users"
-                      iconPosition="left"
-                      className="justify-start"
-                    >
-                      Rendimiento de Auditores
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      fullWidth
-                      iconName="MapPin"
-                      iconPosition="left"
-                      className="justify-start"
-                    >
-                      Comparación de Ubicaciones
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      fullWidth
-                      iconName="AlertTriangle"
-                      iconPosition="left"
-                      className="justify-start"
-                    >
-                      Análisis de Riesgos
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="p-4 border-t border-border">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Estadísticas Rápidas</h3>
-                  <div className="space-y-3">
-                    <div className="glass-effect rounded-lg p-3 hover:bg-white/30 transition-all duration-200">
-                      <div className="text-lg font-bold text-primary">94%</div>
-                      <div className="text-xs text-muted-foreground">Cumplimiento Promedio</div>
-                    </div>
-                    <div className="glass-effect rounded-lg p-3 hover:bg-white/30 transition-all duration-200">
-                      <div className="text-lg font-bold text-success">142</div>
-                      <div className="text-xs text-muted-foreground">Auditorías Este Mes</div>
-                    </div>
-                    <div className="glass-effect rounded-lg p-3 hover:bg-white/30 transition-all duration-200">
-                      <div className="text-lg font-bold text-warning">8</div>
-                      <div className="text-xs text-muted-foreground">Incidencias Pendientes</div>
-                    </div>
-                  </div>
-                </div>
+                {/* Contenido del sidebar simplificado */}
               </div>
             </div>
           )}
@@ -548,6 +489,7 @@ const ReportsAndAnalytics = () => {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

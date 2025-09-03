@@ -178,12 +178,52 @@ const readExcelFromGridFS = async (fileId) => {
 // ✅ Procesar archivo
 router.post("/process/:id", async (req, res) => {
   try {
-    const { rows } = await readExcelFromGridFS(req.params.id);
+    const { auditId } = req.body; // Obtener auditId del cuerpo de la petición
+    const { rows, filename } = await readExcelFromGridFS(req.params.id);
 
     const importedRecords = rows.length;
     const warnings = rows.filter((row) =>
       Object.values(row).some((val) => !val)
     ).length;
+
+    // Crear registro de procesamiento asociado al auditId
+    const processingResult = {
+      fileId: req.params.id,
+      auditId: auditId || null,
+      filename: filename,
+      totalRows: importedRecords,
+      warnings,
+      errors: 0,
+      processedAt: new Date(),
+      processedData: rows,
+      preview: rows.slice(0, 5)
+    };
+
+    // Si hay auditId, asociar el procesamiento a la auditoría
+    if (auditId) {
+      try {
+        const Audit = require('../models/Audit');
+        await Audit.findOneAndUpdate(
+          { $or: [{ _id: auditId }, { auditId: auditId }] },
+          { 
+            $push: { 
+              processedFiles: {
+                fileId: req.params.id,
+                filename: filename,
+                processedAt: new Date(),
+                totalRows: importedRecords,
+                warnings,
+                errors: 0
+              }
+            }
+          },
+          { new: true }
+        );
+        console.log(`✅ Procesamiento asociado a auditoría ${auditId}`);
+      } catch (auditError) {
+        console.error("⚠️ Error al asociar procesamiento con auditoría:", auditError);
+      }
+    }
 
     res.json({
       success: true,
@@ -192,6 +232,8 @@ router.post("/process/:id", async (req, res) => {
       errors: 0,
       preview: rows.slice(0, 5),
       rows,
+      auditId: auditId,
+      associatedToAudit: !!auditId
     });
   } catch (err) {
     console.error("❌ Error en /process/:id: - upload.js:116", err);

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { Helmet } from 'react-helmet';
 import { useLocation } from "react-router-dom";
-import Header from "../../components/ui/Header";
+import Header from '../../components/ui/Header';
+import Footer from '../../components/ui/Footer';
 import Icon from "../../components/AppIcon";
 import FileUploadZone from "./components/FileUploadZone";
 import FileQueue from "./components/FileQueue";
@@ -107,6 +109,9 @@ const FileUploadAndProcessing = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100">
+      <Helmet>
+        <title>Carga y Procesamiento de Archivos</title>
+      </Helmet>
       <Header />
       <main className="pt-16">
         <div className="max-w-7xl mx-auto px-6 py-8">
@@ -211,6 +216,7 @@ const FileUploadAndProcessing = () => {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-describe('Pruebas de Aceptación - Procesamiento de Datos', () => {
+describe('Pruebas E2E - Procesamiento de Datos (MEJORADO)', () => {
   beforeEach(() => {
     // Configurar usuario y auditoría de prueba
     cy.register({

@@ -13,7 +13,8 @@ const AuditTable = ({
   onViewDetails, 
   onEditRecord,
   onProcessData,
-  onDeleteRecord
+  onDeleteRecord,
+  userRole
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -61,6 +62,44 @@ const AuditTable = ({
     if (sortConfig.field !== field) return 'ArrowUpDown';
     return sortConfig.direction === 'asc' ? 'ArrowUp' : 'ArrowDown';
   };
+
+  // Definir permisos por rol según tabla de permisos
+  const getPermissions = (role) => {
+    switch (role?.toLowerCase()) {
+      case 'supervisor':
+        return {
+          view: true,
+          edit: true,
+          processData: true,
+          delete: true
+        };
+      case 'administrador':
+      case 'admin':
+        return {
+          view: true,
+          edit: false,
+          processData: false,
+          delete: false
+        };
+      case 'auditor':
+        return {
+          view: true,
+          edit: true,
+          processData: true,
+          delete: true
+        };
+      case 'usuario':
+      default:
+        return {
+          view: true,
+          edit: true,
+          processData: true,
+          delete: true
+        };
+    }
+  };
+
+  const userPermissions = getPermissions(userRole);
 
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -129,16 +168,8 @@ const AuditTable = ({
                   <Icon name={getSortIcon('completionDate')} size={14} />
                 </button>
               </th>
-              <th className="text-left p-4 font-semibold text-foreground">
-                <button
-                  onClick={() => handleSort('complianceScore')}
-                  className="flex items-center space-x-1 hover:text-primary transition-smooth"
-                >
-                  <span>Puntuación</span>
-                  <Icon name={getSortIcon('complianceScore')} size={14} />
-                </button>
-              </th>
               <th className="text-center p-4 font-semibold text-foreground">Acciones</th>
+              <th className="text-center p-4 font-semibold text-foreground">Reportes y Análisis</th>
             </tr>
           </thead>
           <tbody>
@@ -164,11 +195,6 @@ const AuditTable = ({
                 <td className="p-4">{getStatusBadge(record.status)}</td>
                 <td className="p-4 text-muted-foreground">{formatDate(record.startDate)}</td>
                 <td className="p-4 text-muted-foreground">{formatDate(record.completionDate)}</td>
-                <td className="p-4">
-                  <span className={`font-semibold ${getComplianceScoreColor(record.complianceScore)}`}>
-                    {record.complianceScore}%
-                  </span>
-                </td>
                 <td className="p-4" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center space-x-1">
                     <Button
@@ -184,41 +210,64 @@ const AuditTable = ({
                     >
                       <Icon name="Eye" size={16} />
                     </Button>
+                    {userPermissions.edit && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditRecord(record);
+                        }}
+                        className="h-8 w-8"
+                        title="Editar auditoría"
+                      >
+                        <Icon name="Edit" size={16} />
+                      </Button>
+                    )}
+                    {userPermissions.processData && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onProcessData(record);
+                        }}
+                        className="h-8 w-8 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700"
+                        title="Procesar datos"
+                      >
+                        <Icon name="Zap" size={16} />
+                      </Button>
+                    )}
+                    {userPermissions.delete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteRecord(record);
+                        }}
+                        className="h-8 w-8 hover:bg-red-100 text-red-600 hover:text-red-700"
+                        title="Eliminar auditoría"
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </Button>
+                    )}
+                  </div>
+                </td>
+                <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-center">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onEditRecord(record);
+                        // Navegar a reportes con el ID de auditoría
+                        window.open(`/reports-and-analytics?auditId=${record.auditId}`, '_blank');
                       }}
-                      className="h-8 w-8"
-                      title="Editar auditoría"
+                      className="h-8 w-8 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
+                      title="Ver reportes y análisis"
                     >
-                      <Icon name="Edit" size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onProcessData(record);
-                      }}
-                      className="h-8 w-8 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700"
-                      title="Procesar datos"
-                    >
-                      <Icon name="Zap" size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteRecord(record);
-                      }}
-                      className="h-8 w-8 hover:bg-red-100 text-red-600 hover:text-red-700"
-                      title="Eliminar auditoría"
-                    >
-                      <Icon name="Trash2" size={16} />
+                      <Icon name="BarChart3" size={16} />
                     </Button>
                   </div>
                 </td>
@@ -257,12 +306,6 @@ const AuditTable = ({
                 <p className="font-medium">{record.auditor}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Puntuación:</span>
-                <p className={`font-semibold ${getComplianceScoreColor(record.complianceScore)}`}>
-                  {record.complianceScore}%
-                </p>
-              </div>
-              <div>
                 <span className="text-muted-foreground">Inicio:</span>
                 <p>{formatDate(record.startDate)}</p>
               </div>
@@ -283,29 +326,44 @@ const AuditTable = ({
                 Ver Detalles
               </Button>
               <div className="flex items-center space-x-1">
+                {userPermissions.edit && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEditRecord(record)}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    <Icon name="Edit" size={16} />
+                  </Button>
+                )}
+                {userPermissions.processData && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onProcessData(record)}
+                    className="text-yellow-600 hover:text-yellow-700"
+                  >
+                    <Icon name="Zap" size={16} />
+                  </Button>
+                )}
+                {userPermissions.delete && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDeleteRecord(record)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Icon name="Trash2" size={16} />
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onEditRecord(record)}
+                  onClick={() => window.open(`/reports-and-analytics?auditId=${record.auditId}`, '_blank')}
                   className="text-blue-600 hover:text-blue-700"
+                  title="Ver reportes y análisis"
                 >
-                  <Icon name="Edit" size={16} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onProcessData(record)}
-                  className="text-yellow-600 hover:text-yellow-700"
-                >
-                  <Icon name="Zap" size={16} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDeleteRecord(record)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Icon name="Trash2" size={16} />
+                  <Icon name="BarChart3" size={16} />
                 </Button>
               </div>
             </div>

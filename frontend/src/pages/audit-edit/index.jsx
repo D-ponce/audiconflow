@@ -26,6 +26,21 @@ const AuditEdit = () => {
     priority: 'Media'
   });
 
+  // Obtener rol del usuario desde localStorage
+  const [userRole, setUserRole] = useState(null);
+  
+  useEffect(() => {
+    const session = localStorage.getItem("audiconflow_session");
+    if (session) {
+      try {
+        const sessionData = JSON.parse(session);
+        setUserRole(sessionData.role);
+      } catch (error) {
+        setUserRole(null);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     // Si viene del state (desde la tabla), usar esos datos
     if (location.state?.auditData) {
@@ -327,9 +342,14 @@ const AuditEdit = () => {
                       <option value="En Revisión">En Revisión</option>
                       <option value="Completada">Completada</option>
                       <option value="Pendiente Aprobación">Pendiente Aprobación</option>
-                      <option value="Aprobada">Aprobada</option>
-                      <option value="Rechazada">Rechazada</option>
-                      <option value="Archivada">Archivada</option>
+                      {/* Estados solo disponibles para supervisores */}
+                      {userRole === "supervisor" && (
+                        <>
+                          <option value="Aprobada">Aprobada</option>
+                          <option value="Rechazada">Rechazada</option>
+                          <option value="Archivada">Archivada</option>
+                        </>
+                      )}
                     </select>
                   </div>
                   <div>

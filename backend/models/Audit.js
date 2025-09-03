@@ -84,7 +84,18 @@ const auditSchema = new mongoose.Schema({
   actualHours: {
     type: Number,
     default: 0
-  }
+  },
+  processedFiles: [{
+    fileId: String,
+    filename: String,
+    processedAt: {
+      type: Date,
+      default: Date.now
+    },
+    totalRows: Number,
+    warnings: Number,
+    errors: Number
+  }]
 }, {
   timestamps: true
 });

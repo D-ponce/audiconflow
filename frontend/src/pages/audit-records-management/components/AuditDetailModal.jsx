@@ -319,18 +319,6 @@ const AuditDetailModal = ({ audit, isOpen, onClose, onAuditUpdated }) => {
                     <label className="text-sm font-medium text-muted-foreground">Fecha de Finalización</label>
                     <p className="text-foreground">{formatDate(audit.completionDate)}</p>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Puntuación de Cumplimiento</label>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-2xl font-bold text-success">{audit.complianceScore}%</span>
-                      <div className="flex-1 bg-muted rounded-full h-2">
-                        <div 
-                          className="bg-success h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${audit.complianceScore}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
                 </div>
                 <div className="space-y-4">
                   <div>
@@ -345,47 +333,9 @@ const AuditDetailModal = ({ audit, isOpen, onClose, onAuditUpdated }) => {
                     <label className="text-sm font-medium text-muted-foreground">Próxima Auditoría</label>
                     <p className="text-foreground">15/10/2025</p>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Observaciones</label>
-                    <p className="text-foreground">
-                      Auditoría completada satisfactoriamente. Se identificaron algunas discrepancias menores en el inventario que fueron corregidas durante el proceso.
-                    </p>
-                  </div>
                 </div>
               </div>
 
-              <div className="border-t border-border pt-6">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Resultados por Categoría</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-background border border-border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-muted-foreground">Inventario</span>
-                      <span className="text-lg font-bold text-success">95%</span>
-                    </div>
-                    <div className="bg-muted rounded-full h-2">
-                      <div className="bg-success h-2 rounded-full" style={{ width: '95%' }} />
-                    </div>
-                  </div>
-                  <div className="bg-background border border-border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-muted-foreground">Seguridad</span>
-                      <span className="text-lg font-bold text-warning">88%</span>
-                    </div>
-                    <div className="bg-muted rounded-full h-2">
-                      <div className="bg-warning h-2 rounded-full" style={{ width: '88%' }} />
-                    </div>
-                  </div>
-                  <div className="bg-background border border-border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-muted-foreground">Cumplimiento</span>
-                      <span className="text-lg font-bold text-success">93%</span>
-                    </div>
-                    <div className="bg-muted rounded-full h-2">
-                      <div className="bg-success h-2 rounded-full" style={{ width: '93%' }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
@@ -393,16 +343,6 @@ const AuditDetailModal = ({ audit, isOpen, onClose, onAuditUpdated }) => {
           {activeTab === 'upload' && (
             <div className="space-y-6">
               <ProcessedFilesDisplay auditId={audit.auditId} />
-              
-              <div className="border-t border-border pt-6">
-                <FileUploadSection 
-                  auditId={audit.auditId}
-                  onFileUploaded={(file) => {
-                    console.log('Archivo subido:', file);
-                    loadAttachedFiles();
-                  }}
-                />
-              </div>
             </div>
           )}
 

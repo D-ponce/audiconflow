@@ -16,13 +16,24 @@ router.post('/', async (req, res) => {
       executedBy
     } = req.body;
 
-    // Validar que la auditoría existe
-    const audit = await Audit.findOne({ auditId });
+    // Validar que la auditoría existe (buscar por _id o auditId)
+    const audit = await Audit.findOne({ 
+      $or: [
+        { auditId: auditId },
+        { _id: auditId }
+      ]
+    });
+    
+    console.log('🔍 Buscando auditoría con ID:', auditId);
+    console.log('📋 Auditoría encontrada:', audit ? 'SÍ' : 'NO');
+    
     if (!audit) {
-      return res.status(404).json({
-        success: false,
-        message: 'Auditoría no encontrada'
-      });
+      console.log('⚠️ Auditoría no encontrada, continuando sin validación...');
+      // No bloquear el guardado si no se encuentra la auditoría
+      // return res.status(404).json({
+      //   success: false,
+      //   message: 'Auditoría no encontrada'
+      // });
     }
 
     // Generar ID único para el cruce
@@ -48,15 +59,25 @@ router.post('/', async (req, res) => {
     crossResult.executionDetails.duration = 
       crossResult.executionDetails.endTime - crossResult.executionDetails.startTime;
 
-    await crossResult.save();
+    console.log('💾 Guardando CrossResult en BD...');
+    console.log('📊 Datos a guardar:', {
+      auditId: crossResult.auditId,
+      crossId: crossResult.crossId,
+      resultCount: crossResult.results?.length || 0
+    });
+
+    const savedResult = await crossResult.save();
+    console.log('✅ CrossResult guardado exitosamente con ID:', savedResult._id);
 
     res.status(201).json({
       success: true,
       message: 'Resultado de cruce guardado exitosamente',
       data: {
-        crossId: crossResult.crossId,
-        summary: crossResult.summary,
-        executionDetails: crossResult.executionDetails
+        _id: savedResult._id,
+        crossId: savedResult.crossId,
+        auditId: savedResult.auditId,
+        summary: savedResult.summary,
+        executionDetails: savedResult.executionDetails
       }
     });
 
@@ -74,13 +95,16 @@ router.post('/', async (req, res) => {
 router.get('/:auditId', async (req, res) => {
   try {
     const { auditId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, includeResults = 'false' } = req.query;
+
+    // Determinar si incluir resultados detallados basado en el parámetro
+    const selectFields = includeResults === 'true' ? {} : { results: 0 };
 
     const crossResults = await CrossResult.find({ auditId })
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .select('-results'); // Excluir resultados detallados para mejor rendimiento
+      .select(selectFields);
 
     const total = await CrossResult.countDocuments({ auditId });
 

@@ -115,13 +115,24 @@ const FileUploadZone = ({ acceptedFormats, maxFileSize, auditData, onUploadSucce
       setMessage(`⚙️ Procesando ${filename}...`);
       setProcessingResult(null);
 
-      const res = await fetch(`http://localhost:5000/api/process/${id}`);
+      // Obtener auditId actual
+      const currentAuditId = auditId || auditData?._id || auditData?.auditId || localStorage.getItem('currentAuditId');
+
+      const res = await fetch(`http://localhost:5000/api/process/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          auditId: currentAuditId
+        })
+      });
       const data = await res.json();
 
       if (!res.ok) {
         setMessage(`❌ Error: ${data.error || "No se pudo procesar el archivo"}`);
       } else {
-        setMessage(`✅ Procesamiento completado de ${filename}`);
+        setMessage(`✅ Procesamiento completado de ${filename}${data.associatedToAudit ? ` y asociado a auditoría ${data.auditId}` : ''}`);
         setProcessingResult({ filename, ...data });
       }
     } catch (err) {

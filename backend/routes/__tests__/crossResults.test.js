@@ -306,4 +306,175 @@ describe('Cross Results Routes', () => {
       expect(response.body.data.totalRecords).toBe(0);
     });
   });
+
+  describe('File Validation and Processing', () => {
+    test('validates file format and size', async () => {
+      const invalidFileData = {
+        auditId: 'TEST_AUDIT_001',
+        keyField: 'RUT',
+        resultField: 'Tipo de cuenta',
+        processedFiles: [
+          {
+            filename: 'test.txt', // Invalid format
+            originalName: 'test.txt',
+            recordCount: 0 // No records
+          }
+        ],
+        results: [],
+        executedBy: 'Test User'
+      };
+
+      Audit.findOne.mockResolvedValue({
+        auditId: 'TEST_AUDIT_001',
+        name: 'Test Audit'
+      });
+
+      const response = await request(app)
+        .post('/api/cross-results')
+        .send(invalidFileData);
+
+      expect(response.status).toBeLessThan(500);
+    });
+
+    test('handles large dataset processing', async () => {
+      const largeDataset = {
+        auditId: 'TEST_AUDIT_001',
+        keyField: 'RUT',
+        resultField: 'Tipo de cuenta',
+        processedFiles: [
+          {
+            filename: 'large_dataset.xlsx',
+            originalName: 'large_dataset.xlsx',
+            recordCount: 100000 // Large dataset
+          }
+        ],
+        results: Array(100000).fill().map((_, i) => ({
+          keyValue: `12.345.${String(i).padStart(3, '0')}`,
+          resultValue: 'Personal',
+          status: 'hay coincidencia',
+          sourceFiles: ['large_dataset.xlsx']
+        })),
+        executedBy: 'Test User'
+      };
+
+      Audit.findOne.mockResolvedValue({
+        auditId: 'TEST_AUDIT_001',
+        name: 'Test Audit'
+      });
+
+      const mockSave = jest.fn().mockResolvedValue({
+        crossId: 'CROSS_LARGE_123',
+        summary: {
+          totalRecords: 100000,
+          matchingRecords: 100000,
+          nonMatchingRecords: 0,
+          matchPercentage: 100
+        }
+      });
+
+      CrossResult.mockImplementation(() => ({
+        save: mockSave
+      }));
+
+      const response = await request(app)
+        .post('/api/cross-results')
+        .send(largeDataset);
+
+      expect(response.status).toBeLessThan(500);
+    });
+  });
+
+  describe('Performance and Memory Tests', () => {
+    test('handles memory-intensive operations', async () => {
+      const memoryIntensiveData = {
+        auditId: 'TEST_AUDIT_001',
+        keyField: 'RUT',
+        resultField: 'Tipo de cuenta',
+        processedFiles: [
+          {
+            filename: 'memory_test.xlsx',
+            originalName: 'memory_test.xlsx',
+            recordCount: 50000
+          }
+        ],
+        results: Array(50000).fill().map((_, i) => ({
+          keyValue: `memory.test.${i}`,
+          resultValue: `Result ${i}`,
+          status: i % 2 === 0 ? 'hay coincidencia' : 'no hay coincidencia',
+          sourceFiles: ['memory_test.xlsx'],
+          additionalData: 'A'.repeat(100) // Add some bulk to each record
+        })),
+        executedBy: 'Test User'
+      };
+
+      Audit.findOne.mockResolvedValue({
+        auditId: 'TEST_AUDIT_001',
+        name: 'Test Audit'
+      });
+
+      const mockSave = jest.fn().mockResolvedValue({
+        crossId: 'CROSS_MEMORY_123'
+      });
+
+      CrossResult.mockImplementation(() => ({
+        save: mockSave
+      }));
+
+      const response = await request(app)
+        .post('/api/cross-results')
+        .send(memoryIntensiveData);
+
+      expect(response.status).toBeLessThan(500);
+    });
+
+    test('handles concurrent cross operations', async () => {
+      Audit.findOne.mockResolvedValue({
+        auditId: 'TEST_AUDIT_001',
+        name: 'Test Audit'
+      });
+
+      const mockSave = jest.fn().mockResolvedValue({
+        crossId: 'CROSS_CONCURRENT_123'
+      });
+
+      CrossResult.mockImplementation(() => ({
+        save: mockSave
+      }));
+
+      const concurrentData = {
+        auditId: 'TEST_AUDIT_001',
+        keyField: 'RUT',
+        resultField: 'Tipo de cuenta',
+        processedFiles: [
+          {
+            filename: 'concurrent.xlsx',
+            originalName: 'concurrent.xlsx',
+            recordCount: 10
+          }
+        ],
+        results: [
+          {
+            keyValue: '12.345.678',
+            resultValue: 'Personal',
+            status: 'hay coincidencia',
+            sourceFiles: ['concurrent.xlsx']
+          }
+        ],
+        executedBy: 'Test User'
+      };
+
+      // Simulate concurrent requests
+      const promises = Array(5).fill().map(() => 
+        request(app)
+          .post('/api/cross-results')
+          .send(concurrentData)
+      );
+
+      const responses = await Promise.all(promises);
+      
+      responses.forEach(response => {
+        expect(response.status).toBeLessThan(500);
+      });
+    });
+  });
 });

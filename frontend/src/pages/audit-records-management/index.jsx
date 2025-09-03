@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 import Header from '../../components/ui/Header';
+import Footer from '../../components/ui/Footer';
 import AuditFilters from './components/AuditFilters';
 import AuditTable from './components/AuditTable';
 import AuditDetailModal from './components/AuditDetailModal';
@@ -10,7 +11,6 @@ import Pagination from './components/Pagination';
 import AuditService from '../../services/auditService';
 
 const AuditRecordsManagement = () => {
-  const navigate = useNavigate();
   const [auditRecords, setAuditRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [selectedRecords, setSelectedRecords] = useState([]);
@@ -31,6 +31,21 @@ const AuditRecordsManagement = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Obtener rol del usuario desde localStorage
+  const [userRole, setUserRole] = useState(null);
+  
+  useEffect(() => {
+    const session = localStorage.getItem("audiconflow_session");
+    if (session) {
+      try {
+        const sessionData = JSON.parse(session);
+        setUserRole(sessionData.role);
+      } catch (error) {
+        setUserRole(null);
+      }
+    }
+  }, []);
 
   // Load audits from database
   const loadAudits = async () => {
@@ -346,6 +361,9 @@ const AuditRecordsManagement = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+      <Helmet>
+        <title>Audit Records Management</title>
+      </Helmet>
       <Header />
       <main className="pt-16">
         <div className="container mx-auto px-6 py-8">
@@ -430,6 +448,7 @@ const AuditRecordsManagement = () => {
               onEditRecord={handleEditRecord}
               onProcessData={handleProcessData}
               onDeleteRecord={handleDeleteRecord}
+              userRole={userRole}
             />
           )}
 
@@ -446,10 +465,10 @@ const AuditRecordsManagement = () => {
           )}
         </div>
       </main>
+      <Footer />
 
-      {/* Detail Modal */}
+      {/* Audit Detail Modal */}
       <AuditDetailModal
-        audit={selectedAudit}
         isOpen={showDetailModal}
         onClose={() => {
           setShowDetailModal(false);

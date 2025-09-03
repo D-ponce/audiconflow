@@ -131,21 +131,27 @@ const AuditFilters = ({ onFilterChange, onSearch, onClearFilters }) => {
         </div>
 
         {/* Date Range */}
-        <div className="flex space-x-2">
-          <Input
-            type="date"
-            value={dateRange.start}
-            onChange={(e) => handleDateRangeChange('start', e.target.value)}
-            placeholder="Fecha inicio"
-            className="flex-1"
-          />
-          <Input
-            type="date"
-            value={dateRange.end}
-            onChange={(e) => handleDateRangeChange('end', e.target.value)}
-            placeholder="Fecha fin"
-            className="flex-1"
-          />
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground min-w-[40px]">Desde:</span>
+            <Input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => handleDateRangeChange('start', e.target.value)}
+              placeholder="Fecha inicio"
+              className="flex-1"
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground min-w-[40px]">Hasta:</span>
+            <Input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => handleDateRangeChange('end', e.target.value)}
+              placeholder="Fecha fin"
+              className="flex-1"
+            />
+          </div>
         </div>
       </div>
     </div>

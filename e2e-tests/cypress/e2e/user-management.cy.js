@@ -1,6 +1,9 @@
-describe('Pruebas de Aceptación - Gestión de Usuarios', () => {
+describe('Pruebas E2E - Gestión de Usuarios (MEJORADO)', () => {
   beforeEach(() => {
-    // Registrar administrador de prueba
+    // Setup mejorado con limpieza de datos
+    cy.task('db:seed')
+    
+    // Registrar administrador de prueba con datos consistentes
     cy.register({
       email: 'admin@usermgmt.com',
       password: 'admin123',
@@ -8,53 +11,87 @@ describe('Pruebas de Aceptación - Gestión de Usuarios', () => {
     })
     
     cy.login('admin@usermgmt.com', 'admin123')
+    
+    // Interceptar llamadas API para mejor control
+    cy.intercept('GET', '/api/users*').as('getUsers')
+    cy.intercept('POST', '/api/users').as('createUser')
+    cy.intercept('PUT', '/api/users/*').as('updateUser')
+    cy.intercept('DELETE', '/api/users/*').as('deleteUser')
+  })
+  
+  afterEach(() => {
+    // Limpieza automática post-prueba
+    cy.task('db:clean')
   })
 
   describe('Gestión Completa de Usuarios', () => {
     it('permite crear nuevo usuario desde panel de administración', () => {
       cy.visit('/user-management')
       
-      // Verificar página de gestión
-      cy.contains('Gestión de Usuarios').should('be.visible')
-      cy.get('[data-testid="users-table"]').should('be.visible')
+      // Esperar carga completa con interceptores
+      cy.wait('@getUsers')
       
-      // Crear nuevo usuario
-      cy.get('[data-testid="create-user-button"]').click()
-      cy.get('[data-testid="user-modal"]').should('be.visible')
+      // Verificar página de gestión con selectores robustos
+      cy.get('[data-cy="page-title"]').should('contain', 'Gestión de Usuarios')
+      cy.get('[data-cy="users-table"]').should('be.visible')
+      cy.get('[data-cy="loading-spinner"]').should('not.exist')
       
-      // Llenar formulario
-      cy.get('input[name="email"]').type('nuevo@usuario.com')
-      cy.get('input[name="password"]').type('password123')
-      cy.get('select[name="role"]').select('auditor')
+      // Crear nuevo usuario con validaciones mejoradas
+      cy.get('[data-cy="create-user-btn"]').should('be.enabled').click()
+      cy.get('[data-cy="user-modal"]').should('be.visible')
+      cy.get('[data-cy="modal-title"]').should('contain', 'Crear Usuario')
       
-      // Guardar usuario
-      cy.get('button[type="submit"]').click()
+      // Llenar formulario con validaciones
+      const userEmail = `nuevo-${Date.now()}@usuario.com`
+      cy.get('[data-cy="email-input"]').type(userEmail)
+      cy.get('[data-cy="password-input"]').type('password123')
+      cy.get('[data-cy="role-select"]').select('auditor')
       
-      // Verificar creación
-      cy.contains('Usuario creado exitosamente').should('be.visible')
-      cy.get('[data-testid="users-table"]').should('contain', 'nuevo@usuario.com')
-      cy.get('[data-testid="users-table"]').should('contain', 'auditor')
+      // Validar campos antes de enviar
+      cy.get('[data-cy="email-input"]').should('have.value', userEmail)
+      cy.get('[data-cy="role-select"]').should('have.value', 'auditor')
+      
+      // Guardar usuario y esperar respuesta
+      cy.get('[data-cy="submit-btn"]').click()
+      cy.wait('@createUser')
+      
+      // Verificar creación con mejor aserción
+      cy.get('[data-cy="success-message"]').should('contain', 'Usuario creado exitosamente')
+      cy.get('[data-cy="users-table"]').should('contain', userEmail)
+      cy.get(`[data-cy="user-row-${userEmail}"]`).should('contain', 'auditor')
+      cy.get('[data-cy="user-modal"]').should('not.exist')
     })
 
     it('muestra último acceso de usuarios correctamente', () => {
-      // Crear usuario de prueba
+      const testEmail = `lastaccess-${Date.now()}@test.com`
+      
+      // Crear usuario de prueba con datos únicos
       cy.register({
-        email: 'lastaccess@test.com',
+        email: testEmail,
         password: 'test123',
         role: 'auditor'
       })
       
       // Login con el nuevo usuario para generar último acceso
-      cy.login('lastaccess@test.com', 'test123')
+      cy.login(testEmail, 'test123')
       cy.visit('/dashboard')
+      cy.wait(2000) // Asegurar que se registre el acceso
       
       // Volver como admin para verificar último acceso
       cy.login('admin@usermgmt.com', 'admin123')
       cy.visit('/user-management')
+      cy.wait('@getUsers')
       
-      // Verificar que se muestra último acceso
-      cy.get('[data-testid="users-table"]').should('contain', 'lastaccess@test.com')
-      cy.contains('lastaccess@test.com').parent().should('contain.text', /Hace|minutos|horas/)
+      // Verificar que se muestra último acceso con mejor selección
+      cy.get('[data-cy="users-table"]').should('contain', testEmail)
+      cy.get(`[data-cy="user-row-${testEmail}"]`)
+        .find('[data-cy="last-access"]')
+        .should('match', /Hace (un momento|\d+ (minutos?|horas?|días?))/)
+      
+      // Verificar formato de fecha para usuarios sin acceso previo
+      cy.get('[data-cy="users-table"]')
+        .find('[data-cy="last-access"]:contains("Nunca")')
+        .should('exist')
     })
 
     it('permite editar información de usuario', () => {
@@ -106,54 +143,180 @@ describe('Pruebas de Aceptación - Gestión de Usuarios', () => {
     })
   })
 
-  describe('Filtros y Búsqueda', () => {
-    it('permite filtrar usuarios por rol', () => {
-      // Crear usuarios con diferentes roles
-      cy.register({
-        email: 'admin2@test.com',
-        password: 'admin123',
-        role: 'administrador'
-      })
+  describe('Filtros y Búsqueda Mejorados', () => {
+    it('permite filtrar usuarios por rol con validación completa', () => {
+      const timestamp = Date.now()
+      const adminEmail = `admin-${timestamp}@test.com`
+      const auditorEmail = `auditor-${timestamp}@test.com`
+      const viewerEmail = `viewer-${timestamp}@test.com`
       
-      cy.register({
-        email: 'auditor2@test.com',
-        password: 'auditor123',
-        role: 'auditor'
-      })
+      // Crear usuarios con diferentes roles usando datos únicos
+      cy.register({ email: adminEmail, password: 'admin123', role: 'administrador' })
+      cy.register({ email: auditorEmail, password: 'auditor123', role: 'auditor' })
+      cy.register({ email: viewerEmail, password: 'viewer123', role: 'viewer' })
       
       cy.visit('/user-management')
+      cy.wait('@getUsers')
+      
+      // Verificar estado inicial (todos los usuarios)
+      cy.get('[data-cy="users-table"]').should('contain', adminEmail)
+      cy.get('[data-cy="users-table"]').should('contain', auditorEmail)
+      cy.get('[data-cy="users-table"]').should('contain', viewerEmail)
       
       // Filtrar por administradores
-      cy.get('[data-testid="role-filter"]').select('administrador')
-      cy.get('[data-testid="users-table"]').should('contain', 'admin2@test.com')
-      cy.get('[data-testid="users-table"]').should('not.contain', 'auditor2@test.com')
+      cy.get('[data-cy="role-filter"]').select('administrador')
+      cy.get('[data-cy="filter-loading"]').should('not.exist')
+      cy.get('[data-cy="users-table"]').should('contain', adminEmail)
+      cy.get('[data-cy="users-table"]').should('not.contain', auditorEmail)
+      cy.get('[data-cy="users-table"]').should('not.contain', viewerEmail)
       
       // Filtrar por auditores
-      cy.get('[data-testid="role-filter"]').select('auditor')
-      cy.get('[data-testid="users-table"]').should('contain', 'auditor2@test.com')
-      cy.get('[data-testid="users-table"]').should('not.contain', 'admin2@test.com')
+      cy.get('[data-cy="role-filter"]').select('auditor')
+      cy.get('[data-cy="users-table"]').should('contain', auditorEmail)
+      cy.get('[data-cy="users-table"]').should('not.contain', adminEmail)
+      cy.get('[data-cy="users-table"]').should('not.contain', viewerEmail)
+      
+      // Filtrar por viewers
+      cy.get('[data-cy="role-filter"]').select('viewer')
+      cy.get('[data-cy="users-table"]').should('contain', viewerEmail)
+      cy.get('[data-cy="users-table"]').should('not.contain', adminEmail)
+      cy.get('[data-cy="users-table"]').should('not.contain', auditorEmail)
+      
+      // Limpiar filtro
+      cy.get('[data-cy="role-filter"]').select('todos')
+      cy.get('[data-cy="users-table"]').should('contain', adminEmail)
+      cy.get('[data-cy="users-table"]').should('contain', auditorEmail)
+      cy.get('[data-cy="users-table"]').should('contain', viewerEmail)
     })
 
-    it('permite buscar usuarios por email', () => {
-      cy.register({
-        email: 'busqueda@test.com',
-        password: 'search123',
-        role: 'auditor'
-      })
+    it('permite buscar usuarios por email con validación avanzada', () => {
+      const searchEmail = `busqueda-${Date.now()}@test.com`
+      const otherEmail = `otro-${Date.now()}@test.com`
+      
+      // Crear múltiples usuarios para prueba de búsqueda
+      cy.register({ email: searchEmail, password: 'search123', role: 'auditor' })
+      cy.register({ email: otherEmail, password: 'other123', role: 'viewer' })
       
       cy.visit('/user-management')
+      cy.wait('@getUsers')
       
-      // Buscar usuario
-      cy.get('[data-testid="search-input"]').type('busqueda@test.com')
-      cy.get('[data-testid="search-button"]').click()
+      // Verificar estado inicial
+      cy.get('[data-cy="users-table"]').should('contain', searchEmail)
+      cy.get('[data-cy="users-table"]').should('contain', otherEmail)
       
-      // Verificar resultados
-      cy.get('[data-testid="users-table"]').should('contain', 'busqueda@test.com')
-      cy.get('[data-testid="user-row"]').should('have.length', 1)
+      // Buscar usuario específico
+      cy.get('[data-cy="search-input"]').type(searchEmail)
+      cy.get('[data-cy="search-btn"]').click()
+      
+      // Verificar resultados de búsqueda
+      cy.get('[data-cy="search-loading"]').should('not.exist')
+      cy.get('[data-cy="users-table"]').should('contain', searchEmail)
+      cy.get('[data-cy="users-table"]').should('not.contain', otherEmail)
+      cy.get('[data-cy="user-row"]').should('have.length', 1)
+      
+      // Probar búsqueda parcial
+      cy.get('[data-cy="search-input"]').clear().type('busqueda')
+      cy.get('[data-cy="search-btn"]').click()
+      cy.get('[data-cy="users-table"]').should('contain', searchEmail)
+      
+      // Probar búsqueda sin resultados
+      cy.get('[data-cy="search-input"]').clear().type('noexiste@test.com')
+      cy.get('[data-cy="search-btn"]').click()
+      cy.get('[data-cy="no-results"]').should('be.visible')
+      cy.get('[data-cy="no-results"]').should('contain', 'No se encontraron usuarios')
       
       // Limpiar búsqueda
-      cy.get('[data-testid="clear-search"]').click()
-      cy.get('[data-testid="user-row"]').should('have.length.greaterThan', 1)
+      cy.get('[data-cy="clear-search-btn"]').click()
+      cy.get('[data-cy="search-input"]').should('have.value', '')
+      cy.get('[data-cy="user-row"]').should('have.length.greaterThan', 1)
+      cy.get('[data-cy="users-table"]').should('contain', searchEmail)
+      cy.get('[data-cy="users-table"]').should('contain', otherEmail)
+    })
+    
+    it('maneja estados de carga y errores en filtros', () => {
+      cy.visit('/user-management')
+      cy.wait('@getUsers')
+      
+      // Simular error de red
+      cy.intercept('GET', '/api/users*', { forceNetworkError: true }).as('getUsersError')
+      
+      cy.get('[data-cy="role-filter"]').select('auditor')
+      cy.wait('@getUsersError')
+      
+      // Verificar manejo de errores
+      cy.get('[data-cy="error-message"]').should('be.visible')
+      cy.get('[data-cy="error-message"]').should('contain', 'Error al cargar usuarios')
+      cy.get('[data-cy="retry-btn"]').should('be.visible')
+      
+      // Probar reintento
+      cy.intercept('GET', '/api/users*').as('getUsersRetry')
+      cy.get('[data-cy="retry-btn"]').click()
+      cy.wait('@getUsersRetry')
+      cy.get('[data-cy="error-message"]').should('not.exist')
+    })
+  })
+  
+  describe('Casos Edge y Validaciones Avanzadas', () => {
+    it('maneja concurrencia en operaciones de usuario', () => {
+      const email1 = `concurrent1-${Date.now()}@test.com`
+      const email2 = `concurrent2-${Date.now()}@test.com`
+      
+      cy.visit('/user-management')
+      cy.wait('@getUsers')
+      
+      // Crear múltiples usuarios simultáneamente
+      cy.get('[data-cy="create-user-btn"]').click()
+      cy.get('[data-cy="email-input"]').type(email1)
+      cy.get('[data-cy="password-input"]').type('password123')
+      cy.get('[data-cy="role-select"]').select('auditor')
+      
+      // Simular operación lenta
+      cy.intercept('POST', '/api/users', { delay: 2000 }).as('slowCreateUser')
+      cy.get('[data-cy="submit-btn"]').click()
+      
+      // Intentar crear otro usuario mientras el primero está en proceso
+      cy.get('[data-cy="create-user-btn"]').should('be.disabled')
+      cy.get('[data-cy="loading-overlay"]').should('be.visible')
+      
+      cy.wait('@slowCreateUser')
+      cy.get('[data-cy="create-user-btn"]').should('be.enabled')
+    })
+    
+    it('valida límites de entrada y caracteres especiales', () => {
+      cy.visit('/user-management')
+      
+      cy.get('[data-cy="create-user-btn"]').click()
+      
+      // Probar email con caracteres especiales
+      const specialEmail = 'test+special.email@sub-domain.co.uk'
+      cy.get('[data-cy="email-input"]').type(specialEmail)
+      cy.get('[data-cy="password-input"]').type('password123')
+      cy.get('[data-cy="role-select"]').select('auditor')
+      
+      cy.get('[data-cy="submit-btn"]').click()
+      cy.wait('@createUser')
+      
+      cy.get('[data-cy="success-message"]').should('be.visible')
+      cy.get('[data-cy="users-table"]').should('contain', specialEmail)
+    })
+    
+    it('maneja timeouts y reconexiones', () => {
+      cy.visit('/user-management')
+      
+      // Simular timeout
+      cy.intercept('GET', '/api/users*', { delay: 30000 }).as('timeoutUsers')
+      cy.get('[data-cy="refresh-btn"]').click()
+      
+      // Verificar indicador de timeout
+      cy.get('[data-cy="timeout-warning"]', { timeout: 10000 }).should('be.visible')
+      cy.get('[data-cy="cancel-request-btn"]').click()
+      
+      // Restaurar conexión normal
+      cy.intercept('GET', '/api/users*').as('normalUsers')
+      cy.get('[data-cy="refresh-btn"]').click()
+      cy.wait('@normalUsers')
+      
+      cy.get('[data-cy="users-table"]').should('be.visible')
     })
   })
 })

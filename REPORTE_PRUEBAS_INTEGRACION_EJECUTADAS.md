@@ -214,6 +214,100 @@ models/Users.js     |   95.11 |    90.57 |   97.11 |   94.26 |
 
 ---
 
+## 🚀 COMANDOS UTILIZADOS EN LA IMPLEMENTACIÓN
+
+### **Comandos de Análisis y Exploración:**
+```bash
+# Revisar pruebas de integración existentes
+Read("integration-tests/tests/audits.integration.test.js")
+Read("integration-tests/tests/auth.integration.test.js") 
+Read("integration-tests/tests/fullWorkflow.integration.test.js")
+
+# Explorar configuración del entorno
+Read("integration-tests/setup/setupTestEnv.js")
+Read("integration-tests/setup/setupTests.js")
+Read("integration-tests/package.json")
+
+# Buscar archivos relacionados
+find_by_name("*acceptance*")
+find_by_name("*e2e*")
+list_dir("integration-tests/")
+```
+
+### **Comandos de Corrección y Mejora:**
+```bash
+# Actualizar configuración de Jest
+Edit("backend/jest.config.js") - Configurar ES modules
+Edit("backend/babel.config.js") - Soporte para testing
+
+# Corregir mocks en pruebas unitarias
+Edit("backend/models/__tests__/Users.test.js") - Mocks de mongoose
+Edit("backend/routes/__tests__/audits.test.js") - Mocks de Audit
+Edit("backend/routes/__tests__/auth.test.js") - Mocks de User
+Edit("backend/routes/__tests__/crossResults.test.js") - Mocks de CrossResult
+```
+
+### **Comandos de Ejecución de Pruebas:**
+```bash
+# Intentos de ejecución de pruebas
+run_command("npm test", cwd="integration-tests/")
+run_command("npm install", cwd="integration-tests/")
+run_command(".\EJECUTAR_PRUEBAS_INTEGRACION.bat")
+
+# Verificación de entorno
+run_command("node --version")
+run_command("npm --version")
+```
+
+### **Comandos de Creación de Scripts:**
+```bash
+# Crear scripts de ejecución automatizada
+write_to_file("backend/run-unit-tests.bat")
+write_to_file("backend/run-tests-fixed.bat")
+
+# Generar documentación
+write_to_file("REPORTE_PRUEBAS_INTEGRACION_EJECUTADAS.md")
+```
+
+### **Comandos de Gestión de Tareas:**
+```bash
+# Actualizar lista de TODOs
+todo_list() - Marcar tareas completadas
+todo_list() - Agregar nuevas tareas
+todo_list() - Cambiar estados de progreso
+```
+
+### **Comandos para Ejecutar las Pruebas (Usuario):**
+
+#### **Ejecutar pruebas de integración:**
+```bash
+cd integration-tests
+npm install
+npm test
+```
+
+#### **Ejecutar con script automatizado:**
+```bash
+# Desde la raíz del proyecto
+.\EJECUTAR_PRUEBAS_INTEGRACION.bat
+```
+
+#### **Ejecutar pruebas específicas:**
+```bash
+cd integration-tests
+npx jest tests/auth.integration.test.js
+npx jest tests/audits.integration.test.js
+npx jest tests/fullWorkflow.integration.test.js
+```
+
+#### **Ejecutar con cobertura:**
+```bash
+cd integration-tests
+npm run test:coverage
+```
+
+---
+
 ## 📊 MÉTRICAS FINALES
 
 ```

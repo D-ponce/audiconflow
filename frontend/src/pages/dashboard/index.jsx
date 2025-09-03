@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import Header from '../../components/ui/Header';
+import Footer from '../../components/ui/Footer';
 import MetricCard from './components/MetricCard';
 import AuditTrendsChart from './components/AuditTrendsChart';
 import ComplianceChart from './components/ComplianceChart';
@@ -12,6 +13,7 @@ import Icon from '../../components/AppIcon';
 import AuditorWorkspace from './components/AuditorWorkspace';
 import AuditMetrics from './components/AuditMetrics';
 import AuditService from '../../services/auditService';
+import HeroSection from './components/HeroSection';
 
 const Dashboard = () => {
   const [currentLanguage, setCurrentLanguage] = useState('es');
@@ -92,40 +94,8 @@ const Dashboard = () => {
         <Header />
         <main className="pt-16">
           <div className="max-w-7xl mx-auto px-6 py-8">
-            {/* Page Header */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-semibold text-foreground">Dashboard</h1>
-                  <p className="text-muted-foreground mt-2">
-                    Bienvenido al centro de control de auditorías
-                  </p>
-                </div>
-                <div className="flex flex-col space-y-1">
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <Icon name="Calendar" size={16} />
-                    <span>Última actualización: {new Date().toLocaleDateString('es-ES', { 
-                      day: '2-digit', 
-                      month: '2-digit', 
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <Icon name="User" size={16} />
-                    <span>Usuario: {(() => {
-                      const session = localStorage.getItem('audiconflow_session');
-                      if (session) {
-                        const sessionData = JSON.parse(session);
-                        return sessionData.name || sessionData.email || 'Usuario Anónimo';
-                      }
-                      return 'Usuario Anónimo';
-                    })()}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Hero Section */}
+            <HeroSection />
 
 
 
@@ -143,46 +113,9 @@ const Dashboard = () => {
               <LocationComplianceChart />
             </div>
 
-            {/* Search and Filter Section */}
-            <div className="mt-8 card-modern card-hover p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">Búsqueda Rápida</h3>
-                <Icon name="Search" size={20} className="text-muted-foreground" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="relative">
-                  <Icon name="Search" size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Buscar auditorías..."
-                    className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-                <div className="relative">
-                  <Icon name="MapPin" size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                  <select className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none">
-                    <option value="">Todas las ubicaciones</option>
-                    <option value="casa-matriz">Casa Matriz</option>
-                    <option value="centro-distribucion-s">Centro de distribución S</option>
-                    <option value="centro-distribucion-p">Centro de Distribución P</option>
-                    <option value="locales">Locales</option>
-                    <option value="tiendas">Tiendas</option>
-                  </select>
-                </div>
-                <div className="relative">
-                  <Icon name="Filter" size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                  <select className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none">
-                    <option value="">Todos los estados</option>
-                    <option value="active">Activas</option>
-                    <option value="completed">Completadas</option>
-                    <option value="pending">Pendientes</option>
-                    <option value="scheduled">Programadas</option>
-                  </select>
-                </div>
-              </div>
-            </div>
           </div>
         </main>
+        <Footer />
       </div>
     </>
   );
