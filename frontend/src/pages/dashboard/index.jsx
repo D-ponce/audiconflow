@@ -101,15 +101,28 @@ const Dashboard = () => {
                     Bienvenido al centro de control de auditorías
                   </p>
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Icon name="Calendar" size={16} />
-                  <span>Última actualización: {new Date().toLocaleDateString('es-ES', { 
-                    day: '2-digit', 
-                    month: '2-digit', 
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}</span>
+                <div className="flex flex-col space-y-1">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <Icon name="Calendar" size={16} />
+                    <span>Última actualización: {new Date().toLocaleDateString('es-ES', { 
+                      day: '2-digit', 
+                      month: '2-digit', 
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <Icon name="User" size={16} />
+                    <span>Usuario: {(() => {
+                      const session = localStorage.getItem('audiconflow_session');
+                      if (session) {
+                        const sessionData = JSON.parse(session);
+                        return sessionData.name || sessionData.email || 'Usuario Anónimo';
+                      }
+                      return 'Usuario Anónimo';
+                    })()}</span>
+                  </div>
                 </div>
               </div>
             </div>

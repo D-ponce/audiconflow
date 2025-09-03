@@ -53,3 +53,38 @@ Cypress.Commands.add('checkNotification', (message, type = 'success') => {
     .should('be.visible')
     .and('contain.text', message)
 })
+
+// Comando para realizar cruce de datos completo
+Cypress.Commands.add('performDataCross', (auditId, file1, file2) => {
+  cy.visit(`/file-upload-and-processing?auditId=${auditId}`)
+  
+  // Cargar primer archivo
+  cy.fixture(file1).then(fileContent => {
+    cy.get('input[type="file"]').selectFile({
+      contents: fileContent,
+      fileName: file1
+    })
+  })
+  cy.get('[data-testid="process-button"]').click()
+  cy.contains('Archivo procesado exitosamente', { timeout: 10000 }).should('be.visible')
+  
+  // Cargar segundo archivo
+  cy.fixture(file2).then(fileContent => {
+    cy.get('input[type="file"]').selectFile({
+      contents: fileContent,
+      fileName: file2
+    })
+  })
+  cy.get('[data-testid="process-button"]').click()
+  cy.contains('Archivo procesado exitosamente', { timeout: 10000 }).should('be.visible')
+  
+  // Realizar cruce
+  cy.get('[data-testid="cross-data-button"]').click()
+  cy.get('select[name="file1"]').select(file1)
+  cy.get('select[name="file2"]').select(file2)
+  cy.get('select[name="key1"]').select(0)
+  cy.get('select[name="key2"]').select(0)
+  cy.get('[data-testid="execute-cross-button"]').click()
+  
+  cy.contains('Cruce completado exitosamente', { timeout: 15000 }).should('be.visible')
+})
