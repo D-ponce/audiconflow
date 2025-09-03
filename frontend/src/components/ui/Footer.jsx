@@ -38,8 +38,8 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-3 text-violet-200 hover:text-white transition-colors">
                 <Icon name="Phone" size={16} className="text-violet-300" />
-                <a href="tel:+1234567890" className="text-sm hover:underline">
-                  +1 (234) 567-8900
+                <a>
+                  +56 9 5678900
                 </a>
               </div>
               <div className="flex items-center space-x-3 text-violet-200">
@@ -56,29 +56,29 @@ const Footer = () => {
             </h4>
             <div className="space-y-3">
               <a 
-                href="/terminos-y-condiciones" 
-                className="flex items-center space-x-2 text-violet-200 hover:text-white transition-colors text-sm hover:underline"
+                
+                className="flex items-center space-x-2 text-violet-200 hover:text-white transition-colors"
               >
                 <Icon name="FileText" size={14} className="text-violet-300" />
                 <span>Términos y Condiciones</span>
               </a>
               <a 
-                href="/politica-de-privacidad" 
-                className="flex items-center space-x-2 text-violet-200 hover:text-white transition-colors text-sm hover:underline"
+                 
+                className="flex items-center space-x-2 text-violet-200 hover:text-white transition-colors"
               >
                 <Icon name="Shield" size={14} className="text-violet-300" />
                 <span>Política de Privacidad</span>
               </a>
               <a 
-                href="/politica-de-cookies" 
-                className="flex items-center space-x-2 text-violet-200 hover:text-white transition-colors text-sm hover:underline"
+                
+                className="flex items-center space-x-2 text-violet-200 hover:text-white transition-colors"
               >
                 <Icon name="Settings" size={14} className="text-violet-300" />
                 <span>Política de Cookies</span>
               </a>
               <a 
-                href="/aviso-legal" 
-                className="flex items-center space-x-2 text-violet-200 hover:text-white transition-colors text-sm hover:underline"
+                
+                className="flex items-center space-x-2 text-violet-200 hover:text-white transition-colors"
               >
                 <Icon name="Info" size={14} className="text-violet-300" />
                 <span>Aviso Legal</span>
