@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { ObjectId } from "mongodb";
 import XLSX from "xlsx";
 import { Readable } from "stream";
+import CrossResult from "../models/CrossResult.js";
 
 const router = express.Router();
 
@@ -246,17 +247,92 @@ let lastCrossResults = null;
 
 // ✅ Cruce de información (campo clave + campo resultado asignado)
 router.post("/cross-check", async (req, res) => {
+  const startTime = new Date();
+  const crossId = `CROSS_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const { fileIds, key, result, auditId, executedBy } = req.body;
+  
+  // Función para guardar intento de cruce (exitoso o fallido)
+  const saveCrossAttempt = async (status, results = [], error = null, files = []) => {
+    try {
+      const crossResultData = {
+        auditId: auditId || `TEMP_${Date.now()}`,
+        crossId: crossId,
+        keyField: key || 'N/A',
+        resultField: result || 'N/A',
+        processedFiles: files || [],
+        results: results.map(r => ({
+          keyValue: r.valor || r.keyValue,
+          resultValue: r.resultadoAsignado || r.resultValue,
+          status: r.resultado || r.status,
+          sourceFiles: r.archivos || r.sourceFiles || [],
+          matched: (r.resultado || r.status) === "hay coincidencia"
+        })),
+        summary: {
+          totalRecords: results.length,
+          matchingRecords: results.filter(r => (r.resultado || r.status) === "hay coincidencia").length,
+          matchPercentage: results.length > 0 ? 
+            ((results.filter(r => (r.resultado || r.status) === "hay coincidencia").length / results.length) * 100).toFixed(2) : 0
+        },
+        executionDetails: {
+          executedBy: executedBy || 'Usuario',
+          startTime: startTime,
+          endTime: new Date(),
+          duration: Date.now() - startTime.getTime(),
+          auditId: auditId,
+          error: error
+        },
+        status: status
+      };
+      
+      const savedCrossResult = new CrossResult(crossResultData);
+      await savedCrossResult.save();
+      
+      console.log(`📊 Cruce ${status} guardado con ID: ${crossId}`);
+      if (error) {
+        console.log(`❌ Error registrado: ${error}`);
+      }
+      
+      return savedCrossResult;
+    } catch (dbError) {
+      console.error("⚠️ Error al guardar intento de cruce:", dbError);
+      throw dbError;
+    }
+  };
+
   try {
-    const { fileIds, key, result } = req.body;
+    // Validaciones iniciales
     if (!fileIds || fileIds.length < 2) {
+      const errorMsg = "Debes seleccionar al menos 2 archivos para cruzar";
+      await saveCrossAttempt('Fallido', [], errorMsg, []);
       return res.status(400).json({
-        error: "Debes seleccionar al menos 2 archivos para cruzar",
+        error: errorMsg,
+        crossId: crossId,
+        saved: true
+      });
+    }
+
+    if (!key || !result) {
+      const errorMsg = "Debes especificar campo clave y campo resultado";
+      await saveCrossAttempt('Fallido', [], errorMsg, []);
+      return res.status(400).json({
+        error: errorMsg,
+        crossId: crossId,
+        saved: true
       });
     }
 
     const datasets = [];
+    const processedFiles = [];
+    
     for (const fileId of fileIds) {
-      datasets.push(await readExcelFromGridFS(fileId));
+      const dataset = await readExcelFromGridFS(fileId);
+      datasets.push(dataset);
+      processedFiles.push({
+        filename: dataset.filename,
+        originalName: dataset.filename,
+        recordCount: dataset.rows.length,
+        uploadDate: new Date()
+      });
     }
 
     const occurrences = new Map();
@@ -289,6 +365,19 @@ router.post("/cross-check", async (req, res) => {
       });
     });
 
+    // Guardar resultados exitosos en la base de datos
+    const savedCrossResult = await saveCrossAttempt('Completado', results, null, processedFiles);
+    
+    console.log(`✅ Resultados de cruce guardados en BD con ID: ${crossId}`);
+    console.log(`📊 Datos reales procesados:`);
+    console.log(`   - Auditoría: ${auditId || 'Sin auditoría específica'}`);
+    console.log(`   - Archivos procesados: ${processedFiles.map(f => f.filename).join(', ')}`);
+    console.log(`   - Campo clave: ${key}`);
+    console.log(`   - Campo resultado: ${result}`);
+    console.log(`   - Total registros: ${savedCrossResult.summary.totalRecords}`);
+    console.log(`   - Coincidencias: ${savedCrossResult.summary.matchingRecords} (${savedCrossResult.summary.matchPercentage}%)`);
+    console.log(`   - Primeros 3 resultados:`, results.slice(0, 3));
+
     lastCrossResults = { key, result, results };
 
     res.json({
@@ -297,6 +386,10 @@ router.post("/cross-check", async (req, res) => {
       totalFiles: datasets.length,
       totalValues: results.length,
       results,
+      crossId: crossId,
+      auditId: auditId,
+      savedToDatabase: !!savedCrossResult,
+      crossResultId: savedCrossResult?._id
     });
   } catch (err) {
     console.error("❌ Error en cruce de información - upload.js:179", err);

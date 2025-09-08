@@ -9,8 +9,6 @@ import FileQueue from "./components/FileQueue";
 import FileValidation from "./components/FileValidation";
 import ProcessingStatus from "./components/ProcessingStatus";
 import QuickActions from "./components/QuickActions";
-import UploadHistory from "./components/UploadHistory";
-import fileUploadHistoryService from "../../services/fileUploadHistoryService";
 
 const FileUploadAndProcessing = () => {
   const location = useLocation();
@@ -75,32 +73,6 @@ const FileUploadAndProcessing = () => {
     setSelectedFileId(null);
   };
 
-  // Función para crear registro de historial al cargar archivo
-  const createUploadHistory = async (fileData) => {
-    if (!currentAuditId) return;
-
-    try {
-      const uploadRecord = {
-        auditId: currentAuditId,
-        fileName: fileData.filename || fileData.name,
-        originalName: fileData.originalname || fileData.name,
-        fileSize: fileData.size || 0,
-        fileType: fileData.mimetype || fileData.type || 'unknown',
-        uploadedBy: localStorage.getItem('currentUser') || 'Usuario',
-        uploadPath: fileData.path || '',
-        metadata: {
-          encoding: fileData.encoding,
-          mimetype: fileData.mimetype,
-          destination: fileData.destination,
-          fieldname: fileData.fieldname
-        }
-      };
-
-      await fileUploadHistoryService.createUploadRecord(uploadRecord);
-    } catch (error) {
-      console.error('Error al crear registro de historial:', error);
-    }
-  };
 
   // ✅ Cuando subo archivo, refresco lista
   const handleUploadSuccess = () => {
@@ -117,19 +89,49 @@ const FileUploadAndProcessing = () => {
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* 🔹 Page Header */}
           <div className="mb-8">
-            {/* Mostrar información de la auditoría si viene desde edición */}
-            {fromAuditEdit && auditData && (
+            {/* Mostrar información de la auditoría asociada */}
+            {(fromAuditEdit && auditData) || currentAuditId ? (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <Icon name="FileText" size={16} className="text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-blue-900">
+                        {auditData ? (
+                          `Auditoría: ${auditData.auditId} - ${auditData.type}`
+                        ) : (
+                          `Auditoría ID: ${currentAuditId}`
+                        )}
+                      </h2>
+                      <p className="text-blue-700 text-sm">
+                        {auditData ? (
+                          `Ubicación: ${auditData.location} | Auditor: ${auditData.auditor}`
+                        ) : (
+                          "Todos los archivos se asociarán a esta auditoría"
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 text-blue-600">
+                    <Icon name="Link" size={16} />
+                    <span className="text-sm font-medium">Archivos Asociados</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                    <Icon name="FileText" size={16} className="text-white" />
+                  <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+                    <Icon name="AlertTriangle" size={16} className="text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-blue-900">
-                      Auditoría: {auditData.auditId} - {auditData.type}
+                    <h2 className="text-lg font-semibold text-yellow-900">
+                      Sin Auditoría Asociada
                     </h2>
-                    <p className="text-blue-700 text-sm">
-                      Ubicación: {auditData.location} | Auditor: {auditData.auditor}
+                    <p className="text-yellow-700 text-sm">
+                      Los archivos se cargarán sin asociación a una auditoría específica
                     </p>
                   </div>
                 </div>
@@ -205,13 +207,9 @@ const FileUploadAndProcessing = () => {
               )}
             </div>
 
-            {/* Columna lateral - Acciones rápidas e historial */}
+            {/* Columna lateral - Acciones rápidas */}
             <div className="lg:col-span-1 space-y-6">
               <QuickActions />
-              <UploadHistory 
-                auditId={currentAuditId} 
-                onRefresh={fetchFiles}
-              />
             </div>
           </div>
         </div>

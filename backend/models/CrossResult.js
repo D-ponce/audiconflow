@@ -39,6 +39,10 @@ const crossResultSchema = new mongoose.Schema({
       required: true
     },
     sourceFiles: [String], // Archivos donde se encontró la coincidencia
+    matched: {
+      type: Boolean,
+      default: false
+    },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {}
@@ -66,11 +70,13 @@ const crossResultSchema = new mongoose.Schema({
     executedBy: String,
     startTime: Date,
     endTime: Date,
-    duration: Number // en milisegundos
+    duration: Number, // en milisegundos
+    auditId: String,
+    error: String
   },
   status: {
     type: String,
-    enum: ['En proceso', 'Completado', 'Error'],
+    enum: ['En proceso', 'Completado', 'Fallido', 'Error'],
     default: 'En proceso'
   },
   reportId: {

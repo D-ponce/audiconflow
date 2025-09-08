@@ -1,193 +1,21 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import CrossResult from '../models/CrossResult.js';
 import Audit from '../models/Audit.js';
 import AuditActionLog from '../models/AuditActionLog.js';
 
 const router = express.Router();
 
-// POST /api/cross-results - Crear nuevo resultado de cruce
+// POST /api/cross-results - Crear nuevo resultado de cruce (DESHABILITADO - usar upload.js)
 router.post('/', async (req, res) => {
-  try {
-    const {
-      auditId,
-      keyField,
-      resultField,
-      processedFiles,
-      results,
-      executedBy
-    } = req.body;
-
-    // Validar que la auditoría existe (buscar por _id o auditId)
-    const audit = await Audit.findOne({ 
-      $or: [
-        { auditId: auditId },
-        { _id: auditId }
-      ]
-    });
-    
-    console.log('🔍 Buscando auditoría con ID:', auditId);
-    console.log('📋 Auditoría encontrada:', audit ? 'SÍ' : 'NO');
-    
-    if (!audit) {
-      console.log('⚠️ Auditoría no encontrada, continuando sin validación...');
-      // No bloquear el guardado si no se encuentra la auditoría
-      // return res.status(404).json({
-      //   success: false,
-      //   message: 'Auditoría no encontrada'
-      // });
-    }
-
-    // Generar ID único para el cruce
-    const crossId = `CROSS_${auditId}_${Date.now()}`;
-
-    // Crear nuevo resultado de cruce
-    const crossResult = new CrossResult({
-      auditId,
-      crossId,
-      keyField,
-      resultField,
-      processedFiles,
-      results,
-      executionDetails: {
-        executedBy,
-        startTime: new Date()
-      },
-      status: 'Completado'
-    });
-
-    // Calcular tiempo de finalización
-    crossResult.executionDetails.endTime = new Date();
-    crossResult.executionDetails.duration = 
-      crossResult.executionDetails.endTime - crossResult.executionDetails.startTime;
-
-    console.log('💾 Guardando CrossResult en BD...');
-    console.log('📊 Datos a guardar:', {
-      auditId: crossResult.auditId,
-      crossId: crossResult.crossId,
-      resultCount: crossResult.results?.length || 0
-    });
-
-    const savedResult = await crossResult.save();
-    console.log('✅ CrossResult guardado exitosamente con ID:', savedResult._id);
-
-    // Auto-generar reporte de análisis del cruce
-    let generatedReport = null;
-    if (audit && results && results.length > 0) {
-      try {
-        // Calcular estadísticas del cruce
-        const totalRecords = results.length;
-        const matchedRecords = results.filter(r => r.matched === true || r.status === 'matched').length;
-        const unmatchedRecords = totalRecords - matchedRecords;
-        const matchPercentage = totalRecords > 0 ? ((matchedRecords / totalRecords) * 100).toFixed(2) : 0;
-
-        // Generar datos del reporte
-        const reportData = {
-          name: `Reporte de Cruce - ${audit.name || audit.auditId}`,
-          description: `Análisis automático del cruce de información para la auditoría ${audit.auditId}`,
-          category: 'cross_analysis',
-          type: 'cross_result',
-          auditId: audit._id,
-          crossResultId: savedResult._id,
-          createdBy: executedBy || 'Sistema',
-          format: 'JSON',
-          shared: false,
-          data: {
-            summary: {
-              totalRecords,
-              matchedRecords,
-              unmatchedRecords,
-              matchPercentage,
-              keyField,
-              resultField,
-              executionTime: crossResult.executionDetails.duration
-            },
-            results: results.slice(0, 100), // Primeros 100 resultados para el reporte
-            statistics: {
-              byStatus: results.reduce((acc, r) => {
-                const status = r.status || (r.matched ? 'matched' : 'unmatched');
-                acc[status] = (acc[status] || 0) + 1;
-                return acc;
-              }, {}),
-              processedFiles: processedFiles || []
-            },
-            metadata: {
-              crossId: savedResult.crossId,
-              generatedAt: new Date(),
-              auditInfo: {
-                auditId: audit.auditId,
-                auditName: audit.name,
-                location: audit.location
-              }
-            }
-          }
-        };
-
-        // Importar modelo Report
-        const Report = (await import('../models/Report.js')).default;
-        
-        // Crear y guardar el reporte
-        const report = new Report(reportData);
-        await report.calculateSize();
-        generatedReport = await report.save();
-
-        console.log('✅ Reporte automático generado:', generatedReport._id);
-
-        // Actualizar CrossResult con referencia al reporte
-        savedResult.reportId = generatedReport._id;
-        await savedResult.save();
-
-      } catch (reportError) {
-        console.error('❌ Error generando reporte automático:', reportError);
-        // No fallar el cruce si hay error en el reporte
-      }
-    }
-
-    // Registrar acción de ejecución de cruce
-    if (audit) {
-      await AuditActionLog.logAction(
-        audit.auditId,
-        'cross_check_executed',
-        executedBy || 'Usuario',
-        {
-          crossId: savedResult.crossId,
-          keyField: keyField,
-          resultField: resultField,
-          filesProcessed: processedFiles?.length || 0,
-          resultsCount: results?.length || 0,
-          executionTime: crossResult.executionDetails.duration,
-          reportGenerated: generatedReport ? true : false,
-          reportId: generatedReport?._id
-        },
-        null,
-        {
-          crossResultId: savedResult._id,
-          status: 'Completado',
-          reportId: generatedReport?._id
-        },
-        req
-      );
-    }
-
-    res.status(201).json({
-      success: true,
-      message: 'Resultado de cruce guardado exitosamente',
-      data: {
-        _id: savedResult._id,
-        crossId: savedResult.crossId,
-        auditId: savedResult.auditId,
-        summary: savedResult.summary,
-        executionDetails: savedResult.executionDetails
-      }
-    });
-
-  } catch (error) {
-    console.error('Error al guardar resultado de cruce:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error interno del servidor',
-      error: error.message
-    });
-  }
+  console.log('⚠️ Endpoint POST /api/cross-results está deshabilitado');
+  console.log('📍 Use el endpoint /api/upload/cross-check en su lugar');
+  
+  return res.status(410).json({
+    success: false,
+    message: 'Este endpoint está deshabilitado. Use /api/upload/cross-check para guardar cruces.',
+    redirectTo: '/api/upload/cross-check'
+  });
 });
 
 // GET /api/cross-results/:auditId - Obtener resultados de cruce por auditoría
@@ -196,16 +24,65 @@ router.get('/:auditId', async (req, res) => {
     const { auditId } = req.params;
     const { page = 1, limit = 10, includeResults = 'false' } = req.query;
 
+    console.log(`🔍 Buscando resultados de cruce para auditId: ${auditId}`);
+    console.log(`📋 Parámetros: page=${page}, limit=${limit}, includeResults=${includeResults}`);
+    console.log(`🔌 Estado de MongoDB: ${mongoose.connection.readyState}`);
+
+    // Verificar conexión a la base de datos
+    if (mongoose.connection.readyState !== 1) {
+      console.error('❌ MongoDB no está conectado');
+      return res.status(503).json({
+        success: false,
+        message: 'Base de datos no disponible',
+        error: 'MongoDB connection not ready'
+      });
+    }
+
     // Determinar si incluir resultados detallados basado en el parámetro
     const selectFields = includeResults === 'true' ? {} : { results: 0 };
 
-    const crossResults = await CrossResult.find({ auditId })
+    // Buscar por auditId exacto y también por patrones comunes
+    const searchQuery = {
+      $or: [
+        { auditId: auditId },
+        { auditId: { $regex: auditId, $options: 'i' } },
+        { 'executionDetails.auditId': auditId },
+        // Buscar también por ObjectId si el auditId parece ser uno
+        ...(mongoose.Types.ObjectId.isValid(auditId) ? [{ auditId: new mongoose.Types.ObjectId(auditId) }] : [])
+      ]
+    };
+
+    console.log('🔎 Query de búsqueda:', JSON.stringify(searchQuery));
+
+    // Verificar si la colección existe
+    const collections = await mongoose.connection.db.listCollections({ name: 'crossresults' }).toArray();
+    console.log(`📁 Colección crossresults existe: ${collections.length > 0}`);
+
+    const crossResults = await CrossResult.find(searchQuery)
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .select(selectFields);
 
-    const total = await CrossResult.countDocuments({ auditId });
+    const total = await CrossResult.countDocuments(searchQuery);
+
+    console.log(`📊 Encontrados ${crossResults.length} resultados de ${total} totales`);
+    
+    if (crossResults.length > 0) {
+      console.log('📋 Primer resultado:', {
+        crossId: crossResults[0].crossId,
+        auditId: crossResults[0].auditId,
+        keyField: crossResults[0].keyField,
+        resultField: crossResults[0].resultField,
+        createdAt: crossResults[0].createdAt
+      });
+    } else {
+      console.log('ℹ️ No se encontraron resultados para este auditId');
+      
+      // Buscar todos los auditIds disponibles para debugging
+      const allAuditIds = await CrossResult.distinct('auditId');
+      console.log('📋 AuditIds disponibles en la base de datos:', allAuditIds);
+    }
 
     res.json({
       success: true,
@@ -219,11 +96,14 @@ router.get('/:auditId', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener resultados de cruce:', error);
+    console.error('❌ Error al obtener resultados de cruce:', error);
+    console.error('🔍 Stack trace:', error.stack);
     res.status(500).json({
       success: false,
-      message: 'Error interno del servidor',
-      error: error.message
+      message: 'Error al cargar los resultados de cruce',
+      error: error.message,
+      details: `Error en la consulta de base de datos para auditId: ${req.params.auditId}`,
+      mongoState: mongoose.connection.readyState
     });
   }
 });
@@ -296,24 +176,59 @@ router.delete('/:crossId', async (req, res) => {
   try {
     const { crossId } = req.params;
 
+    console.log(`🗑️ Intentando eliminar resultado de cruce: ${crossId}`);
+
     const crossResult = await CrossResult.findOneAndDelete({ crossId });
     if (!crossResult) {
+      console.log(`❌ Resultado de cruce no encontrado: ${crossId}`);
       return res.status(404).json({
         success: false,
         message: 'Resultado de cruce no encontrado'
       });
     }
 
+    console.log(`✅ Resultado de cruce eliminado exitosamente de la base de datos:`);
+    console.log(`   - ID: ${crossResult.crossId}`);
+    console.log(`   - Auditoría: ${crossResult.auditId}`);
+    console.log(`   - Registros eliminados: ${crossResult.results?.length || 0}`);
+    console.log(`   - Documento MongoDB eliminado: ${crossResult._id}`);
+
+    // Registrar acción de eliminación en audit logs si existe auditId
+    if (crossResult.auditId) {
+      try {
+        await AuditActionLog.logAction(
+          crossResult.auditId,
+          'cross_check_deleted',
+          req.body.deletedBy || 'Usuario',
+          {
+            crossId: crossResult.crossId,
+            keyField: crossResult.keyField,
+            resultField: crossResult.resultField,
+            recordsDeleted: crossResult.results?.length || 0,
+            deletedAt: new Date()
+          },
+          crossResult,
+          null,
+          req
+        );
+        console.log(`📝 Acción de eliminación registrada en audit logs`);
+      } catch (logError) {
+        console.error('⚠️ Error al registrar eliminación en audit logs:', logError);
+      }
+    }
+
     res.json({
       success: true,
-      message: 'Resultado de cruce eliminado exitosamente'
+      message: 'Resultado de cruce eliminado exitosamente de la base de datos',
+      deletedId: crossResult._id,
+      deletedCrossId: crossResult.crossId
     });
 
   } catch (error) {
-    console.error('Error al eliminar resultado de cruce:', error);
+    console.error('❌ Error al eliminar resultado de cruce de la base de datos:', error);
     res.status(500).json({
       success: false,
-      message: 'Error interno del servidor',
+      message: 'Error interno del servidor al eliminar de la base de datos',
       error: error.message
     });
   }

@@ -137,7 +137,10 @@ const FileUploadSection = ({ auditId, onFileUploaded }) => {
         },
         body: JSON.stringify({
           auditId: auditId,
-          files: uploadedFiles.map(f => f.id)
+          fileIds: uploadedFiles.map(f => f.id),
+          key: 'RUT', // Campo clave por defecto
+          result: 'Tipo', // Campo resultado por defecto
+          executedBy: localStorage.getItem('currentUser') || 'Usuario'
         })
       });
 

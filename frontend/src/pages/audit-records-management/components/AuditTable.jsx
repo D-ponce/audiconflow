@@ -255,19 +255,21 @@ const AuditTable = ({
                   </div>
                 </td>
                 <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center space-x-1">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Navegar a reportes con el ID de auditoría
-                        window.open(`/reports-and-analytics?auditId=${record.auditId}`, '_blank');
+                        // Navegar a resultados de cruce con el auditId string
+                        const auditIdToUse = record.auditId || record.id || record._id;
+                        console.log('🔍 Navegando a resultados con auditId:', auditIdToUse);
+                        window.open(`/audit-results/${auditIdToUse}`, '_blank');
                       }}
-                      className="h-8 w-8 hover:bg-blue-100 text-blue-600 hover:text-blue-700"
-                      title="Ver reportes y análisis"
+                      className="h-8 w-8 hover:bg-green-100 text-green-600 hover:text-green-700"
+                      title="Ver resultados de cruce guardados"
                     >
-                      <Icon name="BarChart3" size={16} />
+                      <Icon name="GitBranch" size={16} />
                     </Button>
                   </div>
                 </td>
@@ -359,11 +361,11 @@ const AuditTable = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => window.open(`/reports-and-analytics?auditId=${record.auditId}`, '_blank')}
-                  className="text-blue-600 hover:text-blue-700"
-                  title="Ver reportes y análisis"
+                  onClick={() => window.open(`/audit-results/${record.auditId}`, '_blank')}
+                  className="text-green-600 hover:text-green-700"
+                  title="Ver resultados de cruce guardados"
                 >
-                  <Icon name="BarChart3" size={16} />
+                  <Icon name="GitBranch" size={16} />
                 </Button>
               </div>
             </div>

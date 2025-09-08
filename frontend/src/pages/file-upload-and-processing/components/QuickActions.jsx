@@ -42,6 +42,11 @@ const QuickActions = ({ onProcessAnother }) => {
     }
     try {
       setLoading(true);
+      
+      // Obtener auditId actual
+      const currentAuditId = localStorage.getItem('currentAuditId') || 
+                            new URLSearchParams(window.location.search).get('auditId');
+      
       const res = await fetch("http://localhost:5000/api/cross-check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,10 +54,17 @@ const QuickActions = ({ onProcessAnother }) => {
           fileIds: selectedFiles,
           key: selectedKey,
           result: selectedResult,
+          auditId: currentAuditId,
+          executedBy: localStorage.getItem('currentUser') || 'Usuario'
         }),
       });
       const data = await res.json();
       console.log("✅ Datos del cruce recibidos:", data);
+      
+      if (data.savedToDatabase) {
+        console.log(`✅ Resultados guardados en BD con ID: ${data.crossId} para auditoría: ${data.auditId}`);
+      }
+      
       setCrossResults(data);
       setIsModalOpen(false);
       
@@ -65,7 +77,9 @@ const QuickActions = ({ onProcessAnother }) => {
           selectedResult,
           selectedFiles: selectedFiles.map(id => 
             availableFiles.find(f => f.id === id)?.filename || id
-          )
+          ),
+          auditId: currentAuditId,
+          crossId: data.crossId
         } 
       });
       console.log("✅ Navegación completada");
@@ -79,7 +93,15 @@ const QuickActions = ({ onProcessAnother }) => {
   // ✅ Descargar reporte Excel
   const handleDownloadReport = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/cross-check/report");
+      // Obtener auditId actual
+      const currentAuditId = localStorage.getItem('currentAuditId') || 
+                            new URLSearchParams(window.location.search).get('auditId');
+      
+      const apiUrl = currentAuditId ? 
+        `http://localhost:5000/api/cross-check/report?auditId=${currentAuditId}` :
+        "http://localhost:5000/api/cross-check/report";
+        
+      const res = await fetch(apiUrl);
       if (!res.ok) throw new Error("Error al generar reporte");
 
       const blob = await res.blob();

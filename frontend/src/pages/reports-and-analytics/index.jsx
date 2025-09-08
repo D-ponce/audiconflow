@@ -101,12 +101,12 @@ const ReportsAndAnalytics = () => {
     alert(`Compartiendo reporte: ${report.name}`);
   };
 
-  // Efecto para guardar automáticamente los resultados del cruce
-  useEffect(() => {
-    if (crossResults && crossResults.results && !saveStatus) {
-      saveCrossResultsToDB();
-    }
-  }, [crossResults]);
+  // DESHABILITADO: Efecto para guardar automáticamente los resultados del cruce
+  // useEffect(() => {
+  //   if (crossResults && crossResults.results && !saveStatus) {
+  //     saveCrossResultsToDB();
+  //   }
+  // }, [crossResults]);
 
   const saveCrossResultsToDB = async () => {
     if (!crossResults || !crossResults.results) return;
@@ -224,7 +224,16 @@ const ReportsAndAnalytics = () => {
 
   const exportToExcel = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/cross-check/report');
+      // Obtener auditId del estado o URL
+      const currentAuditId = location.state?.auditId || 
+                            localStorage.getItem('currentAuditId') || 
+                            new URLSearchParams(window.location.search).get('auditId');
+      
+      const apiUrl = currentAuditId ? 
+        `http://localhost:5000/api/cross-check/report?auditId=${currentAuditId}` :
+        'http://localhost:5000/api/cross-check/report';
+        
+      const response = await fetch(apiUrl);
       if (!response.ok) throw new Error('Error al generar reporte Excel');
       
       const blob = await response.blob();

@@ -11,6 +11,7 @@ import AuditRecordsManagement from "./pages/audit-records-management";
 import AuditEdit from "./pages/audit-edit";
 import UserManagement from "./pages/user-management";
 import ReportsAndAnalytics from "./pages/reports-and-analytics";
+import AuditResults from "./pages/audit-results/AuditResults";
 import NotFound from "./pages/NotFound";
 
 const Routes = () => {
@@ -33,6 +34,7 @@ const Routes = () => {
           <Route path="/audit-edit/:auditId" element={<AuditEdit />} />
           <Route path="/user-management" element={<UserManagement />} />
           <Route path="/reports-and-analytics" element={<ReportsAndAnalytics />} />
+          <Route path="/audit-results/:auditId" element={<AuditResults />} />
 
           {/* Página no encontrada */}
           <Route path="*" element={<NotFound />} />

@@ -8,38 +8,83 @@ const VisualizationArea = ({ reportData, reportType }) => {
   const [chartType, setChartType] = useState('bar');
   const [selectedMetric, setSelectedMetric] = useState(reportType === 'cross-check' ? 'cross-results' : 'compliance');
 
-  const complianceData = [
-    { month: 'Ene', cumplimiento: 85, objetivo: 90, auditorias: 45 },
-    { month: 'Feb', cumplimiento: 88, objetivo: 90, auditorias: 52 },
-    { month: 'Mar', cumplimiento: 92, objetivo: 90, auditorias: 48 },
-    { month: 'Abr', cumplimiento: 87, objetivo: 90, auditorias: 55 },
-    { month: 'May', cumplimiento: 94, objetivo: 90, auditorias: 61 },
-    { month: 'Jun', cumplimiento: 91, objetivo: 90, auditorias: 58 },
-    { month: 'Jul', cumplimiento: 89, objetivo: 90, auditorias: 63 }
-  ];
+  // Función para obtener estadísticas del cruce
+  const getCrossStats = () => {
+    if (!reportData || !reportData.results) return { total: 0, coincidencias: 0, porcentaje: 0 };
+    
+    const total = reportData.results.length;
+    const coincidencias = reportData.results.filter(r => r.resultado === 'hay coincidencia').length;
+    const porcentaje = total > 0 ? Math.round((coincidencias / total) * 100) : 0;
+    
+    return { total, coincidencias, porcentaje };
+  };
 
-  const performanceData = [
-    { auditor: 'María García', auditorias: 28, promedio: 4.8, eficiencia: 95 },
-    { auditor: 'Carlos López', auditorias: 32, promedio: 4.6, eficiencia: 88 },
-    { auditor: 'Ana Martín', auditorias: 25, promedio: 4.9, eficiencia: 97 },
-    { auditor: 'José Ruiz', auditorias: 30, promedio: 4.4, eficiencia: 85 },
-    { auditor: 'Laura Sánchez', auditorias: 27, promedio: 4.7, eficiencia: 92 }
-  ];
+  // Generar datos reales basados en reportData
+  const generateRealData = () => {
+    if (!reportData || !reportData.results) {
+      return {
+        complianceData: [],
+        performanceData: [],
+        locationData: [],
+        trendData: []
+      };
+    }
 
-  const locationData = [
-    { name: 'Casa Matriz', value: 35, color: '#2563EB' },
-    { name: 'Centro de distribución S', value: 28, color: '#059669' },
-    { name: 'Centro de Distribución P', value: 22, color: '#D97706' },
-    { name: 'Locales', value: 18, color: '#7C3AED' },
-    { name: 'Tiendas', value: 15, color: '#DC2626' }
-  ];
+    const results = reportData.results;
+    const stats = getCrossStats();
+    
+    // Datos de cumplimiento basados en resultados reales
+    const complianceData = [{
+      month: 'Actual',
+      cumplimiento: stats.porcentaje,
+      objetivo: 90,
+      auditorias: results.length
+    }];
 
-  const trendData = [
-    { week: 'Sem 1', incidencias: 12, resueltas: 10, pendientes: 2 },
-    { week: 'Sem 2', incidencias: 8, resueltas: 7, pendientes: 1 },
-    { week: 'Sem 3', incidencias: 15, resueltas: 13, pendientes: 2 },
-    { week: 'Sem 4', incidencias: 6, resueltas: 6, pendientes: 0 }
-  ];
+    // Datos de rendimiento basados en archivos procesados
+    const fileStats = {};
+    results.forEach(result => {
+      if (result.archivos) {
+        result.archivos.forEach(archivo => {
+          if (!fileStats[archivo]) {
+            fileStats[archivo] = { coincidencias: 0, total: 0 };
+          }
+          fileStats[archivo].total++;
+          if (result.resultado === 'hay coincidencia') {
+            fileStats[archivo].coincidencias++;
+          }
+        });
+      }
+    });
+
+    const performanceData = Object.entries(fileStats).map(([archivo, stats]) => ({
+      auditor: archivo,
+      auditorias: stats.total,
+      promedio: ((stats.coincidencias / stats.total) * 5).toFixed(1),
+      eficiencia: Math.round((stats.coincidencias / stats.total) * 100)
+    }));
+
+    // Datos de ubicación basados en coincidencias vs no coincidencias
+    const coincidencias = results.filter(r => r.resultado === 'hay coincidencia').length;
+    const noCoincidencias = results.length - coincidencias;
+    
+    const locationData = [
+      { name: 'Con Coincidencia', value: coincidencias, color: '#059669' },
+      { name: 'Sin Coincidencia', value: noCoincidencias, color: '#DC2626' }
+    ].filter(item => item.value > 0);
+
+    // Datos de tendencia simulados basados en los resultados
+    const trendData = [{
+      week: 'Procesamiento Actual',
+      incidencias: results.length,
+      resueltas: coincidencias,
+      pendientes: noCoincidencias
+    }];
+
+    return { complianceData, performanceData, locationData, trendData };
+  };
+
+  const { complianceData, performanceData, locationData, trendData } = generateRealData();
 
   const chartTypeOptions = [
     { value: 'bar', label: 'Gráfico de Barras' },
@@ -63,16 +108,6 @@ const VisualizationArea = ({ reportData, reportType }) => {
       { name: 'Hay Coincidencia', value: coincidencias, color: '#059669' },
       { name: 'No Hay Coincidencia', value: noCoincidencias, color: '#DC2626' }
     ];
-  };
-
-  const getCrossStats = () => {
-    if (!reportData || !reportData.results) return { total: 0, coincidencias: 0, porcentaje: 0 };
-    
-    const total = reportData.results.length;
-    const coincidencias = reportData.results.filter(r => r.resultado === 'hay coincidencia').length;
-    const porcentaje = total > 0 ? Math.round((coincidencias / total) * 100) : 0;
-    
-    return { total, coincidencias, porcentaje };
   };
 
   const handleExportVisualization = async () => {

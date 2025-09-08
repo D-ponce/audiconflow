@@ -196,7 +196,15 @@ router.post('/', async (req, res) => {
     };
 
     console.log('📝 Creando reporte con datos:', reportData);
-    const report = new Report(reportData);
+
+    // Validar y corregir valores enum antes de crear el reporte
+    const validatedData = {
+      ...reportData,
+      format: reportData.format === 'html' ? 'JSON' : reportData.format,
+      category: reportData.category === 'cross_analysis' ? 'Cruce de Datos' : reportData.category
+    };
+
+    const report = new Report(validatedData);
 
     // Calcular tamaño si no se proporcionó
     if (!size) {

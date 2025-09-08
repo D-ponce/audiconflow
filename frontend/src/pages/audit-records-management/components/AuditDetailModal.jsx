@@ -259,7 +259,6 @@ const AuditDetailModal = ({ audit, isOpen, onClose, onAuditUpdated }) => {
   const tabs = [
     { id: 'general', label: 'Información General', icon: 'Info' },
     { id: 'upload', label: 'Archivos Adjuntos', icon: 'Paperclip' },
-    { id: 'reports', label: 'Reportes y Análisis', icon: 'BarChart3' },
     { id: 'history', label: 'Historial', icon: 'Clock' }
   ];
 
@@ -347,21 +346,47 @@ const AuditDetailModal = ({ audit, isOpen, onClose, onAuditUpdated }) => {
             </div>
           )}
 
-          {activeTab === 'reports' && (
-            <div className="space-y-6">
-              <AuditReportsSection 
-                auditId={audit.auditId} 
-                isVisible={true}
-              />
-            </div>
-          )}
 
           {activeTab === 'history' && (
             <div className="space-y-6">
-              <AuditActionHistory 
-                auditId={audit.auditId} 
-                isVisible={true}
-              />
+              <div className="bg-white rounded-lg border border-gray-200">
+                <div className="p-6">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <Icon name="Clock" size={24} className="text-blue-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">Historial de Auditoría</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {generateRealHistory(audit).map((item) => (
+                      <div key={item.id} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Icon name="Activity" size={16} className="text-blue-600" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-gray-900">{item.action}</h4>
+                            <span className="text-sm text-gray-500">{formatDate(item.date)}</span>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{item.details}</p>
+                          <div className="flex items-center space-x-2 mt-2">
+                            <Icon name="User" size={14} className="text-gray-400" />
+                            <span className="text-xs text-gray-500">{item.user}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {generateRealHistory(audit).length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <Icon name="Clock" size={48} className="mx-auto text-gray-300 mb-4" />
+                        <p>No hay historial disponible para esta auditoría</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -370,14 +395,6 @@ const AuditDetailModal = ({ audit, isOpen, onClose, onAuditUpdated }) => {
         <div className="flex items-center justify-end space-x-3 p-6 border-t border-border">
           <Button variant="outline" onClick={onClose}>
             Cerrar
-          </Button>
-          <Button 
-            variant="default" 
-            iconName="Edit" 
-            iconPosition="left"
-            onClick={() => setShowEditModal(true)}
-          >
-            Editar Auditoría
           </Button>
         </div>
       </div>
@@ -490,7 +507,6 @@ const AuditDetailModal = ({ audit, isOpen, onClose, onAuditUpdated }) => {
                       required
                     >
                       <option value="Pendiente">Pendiente</option>
-                      <option value="Activa">Activa</option>
                       <option value="Completada">Completada</option>
                       <option value="En Revisión">En Revisión</option>
                     </select>
