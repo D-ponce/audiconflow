@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { useLocation } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Footer from '../../components/ui/Footer';
 import crossResultService from '../../services/crossResultService';
@@ -427,14 +428,11 @@ const ReportsAndAnalytics = () => {
                   <h2 className="text-xl font-semibold text-foreground">Reportes y Análisis</h2>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="md"
                     onClick={() => setShowSidebar(false)}
                     iconName="PanelLeftClose"
                   />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Genere informes detallados y análisis de datos de auditoría con herramientas avanzadas de visualización.
-                </p>
               </div>
 
               <div className="flex-1 overflow-y-auto">
@@ -472,12 +470,6 @@ const ReportsAndAnalytics = () => {
                   ))}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm" iconName="RefreshCw">
-                    Actualizar
-                  </Button>
-                  <Button variant="outline" size="sm" iconName="HelpCircle">
-                    Ayuda
-                  </Button>
                 </div>
               </div>
             </div>

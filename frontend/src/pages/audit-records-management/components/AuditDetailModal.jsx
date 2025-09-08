@@ -3,6 +3,8 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import FileUploadSection from './FileUploadSection';
 import ProcessedFilesDisplay from './ProcessedFilesDisplay';
+import AuditActionHistory from '../../../components/AuditActionHistory';
+import AuditReportsSection from '../../../components/AuditReportsSection';
 import AuditService from '../../../services/auditService';
 
 
@@ -257,6 +259,7 @@ const AuditDetailModal = ({ audit, isOpen, onClose, onAuditUpdated }) => {
   const tabs = [
     { id: 'general', label: 'Información General', icon: 'Info' },
     { id: 'upload', label: 'Archivos Adjuntos', icon: 'Paperclip' },
+    { id: 'reports', label: 'Reportes y Análisis', icon: 'BarChart3' },
     { id: 'history', label: 'Historial', icon: 'Clock' }
   ];
 
@@ -335,10 +338,8 @@ const AuditDetailModal = ({ audit, isOpen, onClose, onAuditUpdated }) => {
                   </div>
                 </div>
               </div>
-
             </div>
           )}
-
 
           {activeTab === 'upload' && (
             <div className="space-y-6">
@@ -346,31 +347,21 @@ const AuditDetailModal = ({ audit, isOpen, onClose, onAuditUpdated }) => {
             </div>
           )}
 
+          {activeTab === 'reports' && (
+            <div className="space-y-6">
+              <AuditReportsSection 
+                auditId={audit.auditId} 
+                isVisible={true}
+              />
+            </div>
+          )}
+
           {activeTab === 'history' && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Historial de Cambios</h3>
-              <div className="space-y-4">
-                {generateRealHistory(audit).map((entry, index) => (
-                  <div key={entry.id} className="flex space-x-4">
-                    <div className="flex flex-col items-center">
-                      <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-full">
-                        <Icon name="Clock" size={14} color="white" />
-                      </div>
-                      {index < generateRealHistory(audit).length - 1 && (
-                        <div className="w-px h-12 bg-border mt-2" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-medium text-foreground">{entry.action}</h4>
-                        <span className="text-sm text-muted-foreground">{formatDate(entry.date)}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-1">Por: {entry.user}</p>
-                      <p className="text-sm text-foreground">{entry.details}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="space-y-6">
+              <AuditActionHistory 
+                auditId={audit.auditId} 
+                isVisible={true}
+              />
             </div>
           )}
         </div>

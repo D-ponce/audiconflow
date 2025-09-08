@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { useNavigate } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Footer from '../../components/ui/Footer';
 import AuditFilters from './components/AuditFilters';
@@ -11,6 +12,7 @@ import Pagination from './components/Pagination';
 import AuditService from '../../services/auditService';
 
 const AuditRecordsManagement = () => {
+  const navigate = useNavigate();
   const [auditRecords, setAuditRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [selectedRecords, setSelectedRecords] = useState([]);
@@ -469,6 +471,7 @@ const AuditRecordsManagement = () => {
 
       {/* Audit Detail Modal */}
       <AuditDetailModal
+        audit={selectedAudit}
         isOpen={showDetailModal}
         onClose={() => {
           setShowDetailModal(false);

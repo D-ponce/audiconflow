@@ -1,6 +1,7 @@
 import express from 'express';
 import CrossResult from '../models/CrossResult.js';
 import Audit from '../models/Audit.js';
+import AuditActionLog from '../models/AuditActionLog.js';
 
 const router = express.Router();
 
@@ -68,6 +69,104 @@ router.post('/', async (req, res) => {
 
     const savedResult = await crossResult.save();
     console.log('✅ CrossResult guardado exitosamente con ID:', savedResult._id);
+
+    // Auto-generar reporte de análisis del cruce
+    let generatedReport = null;
+    if (audit && results && results.length > 0) {
+      try {
+        // Calcular estadísticas del cruce
+        const totalRecords = results.length;
+        const matchedRecords = results.filter(r => r.matched === true || r.status === 'matched').length;
+        const unmatchedRecords = totalRecords - matchedRecords;
+        const matchPercentage = totalRecords > 0 ? ((matchedRecords / totalRecords) * 100).toFixed(2) : 0;
+
+        // Generar datos del reporte
+        const reportData = {
+          name: `Reporte de Cruce - ${audit.name || audit.auditId}`,
+          description: `Análisis automático del cruce de información para la auditoría ${audit.auditId}`,
+          category: 'cross_analysis',
+          type: 'cross_result',
+          auditId: audit._id,
+          crossResultId: savedResult._id,
+          createdBy: executedBy || 'Sistema',
+          format: 'JSON',
+          shared: false,
+          data: {
+            summary: {
+              totalRecords,
+              matchedRecords,
+              unmatchedRecords,
+              matchPercentage,
+              keyField,
+              resultField,
+              executionTime: crossResult.executionDetails.duration
+            },
+            results: results.slice(0, 100), // Primeros 100 resultados para el reporte
+            statistics: {
+              byStatus: results.reduce((acc, r) => {
+                const status = r.status || (r.matched ? 'matched' : 'unmatched');
+                acc[status] = (acc[status] || 0) + 1;
+                return acc;
+              }, {}),
+              processedFiles: processedFiles || []
+            },
+            metadata: {
+              crossId: savedResult.crossId,
+              generatedAt: new Date(),
+              auditInfo: {
+                auditId: audit.auditId,
+                auditName: audit.name,
+                location: audit.location
+              }
+            }
+          }
+        };
+
+        // Importar modelo Report
+        const Report = (await import('../models/Report.js')).default;
+        
+        // Crear y guardar el reporte
+        const report = new Report(reportData);
+        await report.calculateSize();
+        generatedReport = await report.save();
+
+        console.log('✅ Reporte automático generado:', generatedReport._id);
+
+        // Actualizar CrossResult con referencia al reporte
+        savedResult.reportId = generatedReport._id;
+        await savedResult.save();
+
+      } catch (reportError) {
+        console.error('❌ Error generando reporte automático:', reportError);
+        // No fallar el cruce si hay error en el reporte
+      }
+    }
+
+    // Registrar acción de ejecución de cruce
+    if (audit) {
+      await AuditActionLog.logAction(
+        audit.auditId,
+        'cross_check_executed',
+        executedBy || 'Usuario',
+        {
+          crossId: savedResult.crossId,
+          keyField: keyField,
+          resultField: resultField,
+          filesProcessed: processedFiles?.length || 0,
+          resultsCount: results?.length || 0,
+          executionTime: crossResult.executionDetails.duration,
+          reportGenerated: generatedReport ? true : false,
+          reportId: generatedReport?._id
+        },
+        null,
+        {
+          crossResultId: savedResult._id,
+          status: 'Completado',
+          reportId: generatedReport?._id
+        },
+        req
+      );
+    }
 
     res.status(201).json({
       success: true,

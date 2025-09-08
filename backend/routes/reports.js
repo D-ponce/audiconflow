@@ -2,6 +2,7 @@ import express from 'express';
 import Report from '../models/Report.js';
 import CrossResult from '../models/CrossResult.js';
 import Audit from '../models/Audit.js';
+import AuditActionLog from '../models/AuditActionLog.js';
 import mongoose from 'mongoose';
 
 const router = express.Router();
@@ -26,6 +27,83 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('Error al obtener reportes:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// GET /api/reports/audit/:auditId - Obtener reportes específicos de una auditoría
+router.get('/audit/:auditId', async (req, res) => {
+  try {
+    const { auditId } = req.params;
+    const { includeData = 'false' } = req.query;
+
+    // Buscar la auditoría para validar que existe
+    const audit = await Audit.findOne({
+      $or: [
+        { _id: auditId },
+        { auditId: auditId }
+      ]
+    });
+
+    if (!audit) {
+      return res.status(404).json({
+        success: false,
+        message: 'Auditoría no encontrada'
+      });
+    }
+
+    // Buscar reportes asociados a esta auditoría
+    const reports = await Report.find({ auditId: audit._id })
+      .populate('crossResultId', 'crossId keyField resultField status executionDetails')
+      .sort({ createdAt: -1 });
+
+    // Formatear respuesta
+    const formattedReports = reports.map(report => {
+      const reportObj = report.toObject();
+      
+      // Si no se solicitan los datos completos, excluir el campo data para optimizar
+      if (includeData !== 'true') {
+        delete reportObj.data;
+      }
+
+      return {
+        ...reportObj,
+        auditInfo: {
+          auditId: audit.auditId,
+          auditName: audit.name,
+          location: audit.location
+        }
+      };
+    });
+
+    // Calcular estadísticas de los reportes
+    const stats = {
+      total: reports.length,
+      byCategory: reports.reduce((acc, report) => {
+        acc[report.category] = (acc[report.category] || 0) + 1;
+        return acc;
+      }, {}),
+      byType: reports.reduce((acc, report) => {
+        acc[report.type] = (acc[report.type] || 0) + 1;
+        return acc;
+      }, {}),
+      totalViews: reports.reduce((sum, report) => sum + (report.views || 0), 0)
+    };
+
+    res.json({
+      success: true,
+      auditId: audit.auditId,
+      auditName: audit.name,
+      reports: formattedReports,
+      stats
+    });
+
+  } catch (error) {
+    console.error('Error al obtener reportes de auditoría:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor',
+      message: error.message
+    });
   }
 });
 
@@ -127,6 +205,32 @@ router.post('/', async (req, res) => {
     
     await report.save();
     console.log('✅ Reporte guardado con ID:', report._id);
+
+    // Registrar acción de generación de reporte
+    if (auditId && auditId !== 'AUDIT_DEFAULT') {
+      const audit = await Audit.findById(auditId);
+      if (audit) {
+        await AuditActionLog.logAction(
+          audit.auditId,
+          'report_generated',
+          createdBy || 'Usuario',
+          {
+            reportName: name,
+            reportType: type,
+            reportCategory: category,
+            reportFormat: format || 'PDF',
+            reportSize: size || '0 KB',
+            crossResultId: crossResultId
+          },
+          null,
+          {
+            reportId: report._id,
+            reportName: name
+          },
+          req
+        );
+      }
+    }
 
     const populatedReport = await Report.findById(report._id)
       .populate('auditId', 'name description')

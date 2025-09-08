@@ -104,25 +104,24 @@ router.put("/users/:id", async (req, res) => {
       return res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres" });
     }
 
-    // Actualizar campos
-    const updateData = {};
-    if (name) updateData.name = name;
-    if (email) updateData.email = email;
-    if (password) updateData.password = password; // Solo actualizar si se proporciona
-    if (role) updateData.role = role;
-    if (department) updateData.department = department;
-    if (phone) updateData.phone = phone;
-    if (status) updateData.status = status;
-    if (permissions) updateData.permissions = permissions;
+    // Actualizar campos usando save() para que se ejecute el middleware de cifrado
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (password) user.password = password; // El middleware pre-save cifrará la contraseña
+    if (role) user.role = role;
+    if (department) user.department = department;
+    if (phone) user.phone = phone;
+    if (status) user.status = status;
+    if (permissions) user.permissions = permissions;
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, select: { password: 0 } }
-    );
+    const updatedUser = await user.save();
+
+    // Responder sin password
+    const userResponse = updatedUser.toObject();
+    delete userResponse.password;
 
     res.json({
-      ...updatedUser.toObject(),
+      ...userResponse,
       message: "Usuario actualizado exitosamente ✅"
     });
   } catch (err) {

@@ -1,6 +1,7 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import Audit from '../models/Audit.js';
+import AuditActionLog from '../models/AuditActionLog.js';
+import mongoose from 'mongoose';
 const router = express.Router();
 
 // Create new audit
@@ -31,6 +32,24 @@ router.post('/create', async (req, res) => {
     });
 
     const savedAudit = await newAudit.save();
+
+    // Registrar acción de creación
+    await AuditActionLog.logAction(
+      savedAudit.auditId,
+      'created',
+      createdBy || 'Usuario',
+      {
+        auditName: name,
+        auditType: type,
+        location: location,
+        priority: priority || 'Media',
+        dueDate: dueDate,
+        auditor: auditor || 'Sin asignar'
+      },
+      null,
+      savedAudit,
+      req
+    );
 
     res.status(201).json({
       success: true,
@@ -211,6 +230,16 @@ router.put('/:id', async (req, res) => {
       query = { auditId: id };
     }
     
+    // Obtener auditoría actual para comparar cambios
+    const currentAudit = await Audit.findOne(query);
+    if (!currentAudit) {
+      console.log('Audit not found with ID:', id);
+      return res.status(404).json({
+        success: false,
+        message: 'Auditoría no encontrada'
+      });
+    }
+
     const updatedAudit = await Audit.findOneAndUpdate(
       query,
       { 
@@ -220,12 +249,45 @@ router.put('/:id', async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    if (!updatedAudit) {
-      console.log('Audit not found with ID:', id);
-      return res.status(404).json({
-        success: false,
-        message: 'Auditoría no encontrada'
-      });
+    // Registrar acción de actualización
+    const changedFields = {};
+    const previousValues = {};
+    const newValues = {};
+    
+    Object.keys(req.body).forEach(key => {
+      if (currentAudit[key] !== req.body[key]) {
+        changedFields[key] = {
+          from: currentAudit[key],
+          to: req.body[key]
+        };
+        previousValues[key] = currentAudit[key];
+        newValues[key] = req.body[key];
+      }
+    });
+
+    if (Object.keys(changedFields).length > 0) {
+      let action = 'updated';
+      let actionBy = req.body.updatedBy || req.body.createdBy || 'Usuario';
+
+      // Determinar tipo específico de acción
+      if (changedFields.status) {
+        action = 'status_changed';
+      } else if (changedFields.auditor) {
+        action = 'assigned';
+      }
+
+      await AuditActionLog.logAction(
+        updatedAudit.auditId,
+        action,
+        actionBy,
+        {
+          changedFields: changedFields,
+          updateType: action
+        },
+        previousValues,
+        newValues,
+        req
+      );
     }
 
     console.log('Audit updated successfully:', updatedAudit);
@@ -248,6 +310,8 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const { deletedBy } = req.body;
+    
     const deletedAudit = await Audit.findOneAndDelete({
       $or: [
         { _id: id },
@@ -261,6 +325,21 @@ router.delete('/:id', async (req, res) => {
         message: 'Auditoría no encontrada'
       });
     }
+
+    // Registrar acción de eliminación
+    await AuditActionLog.logAction(
+      deletedAudit.auditId,
+      'deleted',
+      deletedBy || 'Usuario',
+      {
+        auditName: deletedAudit.name,
+        auditType: deletedAudit.type,
+        deletedData: deletedAudit
+      },
+      deletedAudit,
+      null,
+      req
+    );
 
     res.json({
       success: true,

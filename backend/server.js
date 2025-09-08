@@ -10,6 +10,8 @@ import fileRoutes from "./routes/files.js";
 import crossResultsRoutes from "./routes/crossResults.js";
 import reportsRoutes from "./routes/reports.js";
 import fileUploadHistoryRoutes from "./routes/fileUploadHistory.js";
+import migrateRoutes from "./routes/migrate.js";
+import auditActionLogsRoutes from "./routes/auditActionLogs.js";
 
 dotenv.config();
 
@@ -57,6 +59,12 @@ app.use("/api/reports", reportsRoutes);
 
 // Rutas de historial de carga de archivos
 app.use("/api/file-history", fileUploadHistoryRoutes);
+
+// Rutas de migración
+app.use("/api/migrate", migrateRoutes);
+
+// Rutas de historial de acciones de auditoría
+app.use("/api/audit-logs", auditActionLogsRoutes);
 
 const PORT = process.env.PORT || 5000;
 

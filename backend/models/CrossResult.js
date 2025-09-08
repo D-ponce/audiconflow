@@ -63,21 +63,20 @@ const crossResultSchema = new mongoose.Schema({
     }
   },
   executionDetails: {
-    startTime: {
-      type: Date,
-      default: Date.now
-    },
+    executedBy: String,
+    startTime: Date,
     endTime: Date,
-    duration: Number, // en milisegundos
-    executedBy: {
-      type: String,
-      required: true
-    }
+    duration: Number // en milisegundos
   },
   status: {
     type: String,
-    enum: ['En Progreso', 'Completado', 'Error'],
-    default: 'En Progreso'
+    enum: ['En proceso', 'Completado', 'Error'],
+    default: 'En proceso'
+  },
+  reportId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Report',
+    description: 'Referencia al reporte automático generado para este cruce'
   },
   errorDetails: {
     message: String,

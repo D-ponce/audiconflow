@@ -43,22 +43,13 @@ const VisualizationArea = ({ reportData, reportType }) => {
 
   const chartTypeOptions = [
     { value: 'bar', label: 'Gráfico de Barras' },
-    { value: 'line', label: 'Gráfico de Líneas' },
-    { value: 'area', label: 'Gráfico de Área' },
     { value: 'pie', label: 'Gráfico Circular' }
   ];
 
   const metricOptions = reportType === 'cross-check' ? [
-    { value: 'cross-results', label: 'Resultados del Cruce' },
-    { value: 'compliance', label: 'Cumplimiento' },
-    { value: 'performance', label: 'Rendimiento' },
-    { value: 'trends', label: 'Tendencias' },
-    { value: 'locations', label: 'Ubicaciones' }
+    { value: 'cross-results', label: 'Resultados del Cruce' }
   ] : [
-    { value: 'compliance', label: 'Cumplimiento' },
-    { value: 'performance', label: 'Rendimiento' },
-    { value: 'trends', label: 'Tendencias' },
-    { value: 'locations', label: 'Ubicaciones' }
+    { value: 'cross-results', label: 'Resultados del Cruce' }
   ];
 
   // Procesar datos del cruce para visualización
@@ -82,6 +73,256 @@ const VisualizationArea = ({ reportData, reportType }) => {
     const porcentaje = total > 0 ? Math.round((coincidencias / total) * 100) : 0;
     
     return { total, coincidencias, porcentaje };
+  };
+
+  const handleExportVisualization = async () => {
+    try {
+      // Crear datos del reporte de visualización
+      const visualizationData = {
+        name: `Reporte de Visualización - ${selectedMetric}`,
+        createdBy: localStorage.getItem('currentUser') || 'Usuario Anónimo',
+        data: {
+          chartType: chartType,
+          selectedMetric: selectedMetric,
+          reportType: reportType,
+          crossResults: reportData?.results || [],
+          stats: getCrossStats()
+        },
+        metadata: {
+          totalRecords: getCrossStats().total,
+          matchedRecords: getCrossStats().coincidencias,
+          matchPercentage: getCrossStats().porcentaje,
+          chartType: chartType,
+          metric: selectedMetric,
+          generatedAt: new Date().toISOString()
+        }
+      };
+
+      // Generar reporte PDF con gráficas
+      await generateVisualizationPDF(visualizationData);
+
+      alert('Reporte de visualización exportado exitosamente en PDF');
+    } catch (error) {
+      console.error('Error al exportar visualización:', error);
+      alert('Error al generar el reporte PDF. Intente nuevamente.');
+    }
+  };
+
+  const generateVisualizationPDF = async (data) => {
+    try {
+      // Importar jsPDF dinámicamente
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+      await import('jspdf-autotable');
+
+      const { stats, chartType, selectedMetric } = data.data;
+      const fileName = `reporte_visualizacion_${new Date().toISOString().split('T')[0]}`;
+      
+      // Crear documento PDF
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      // Configurar fuentes
+      doc.setFont('helvetica');
+      
+      // Título principal
+      doc.setFontSize(20);
+      doc.setTextColor(40, 40, 40);
+      doc.text(data.name, 20, 25);
+      
+      // Información del reporte
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generado el: ${new Date().toLocaleDateString('es-ES')}`, 20, 35);
+      doc.text(`Por: ${data.createdBy}`, 20, 40);
+      doc.text(`Tipo de gráfico: ${chartType === 'pie' ? 'Circular' : 'Barras'}`, 20, 45);
+      
+      let currentY = 60;
+      
+      // Marca corporativa
+      doc.setFontSize(16);
+      doc.setTextColor(66, 139, 202);
+      doc.text('AudiconFlow', 20, currentY);
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Sistema de Gestión de Auditorías - Reporte de Visualización', 20, currentY + 5);
+      currentY += 20;
+      
+      // Capturar gráfica como imagen
+      const chartElement = document.querySelector('.recharts-wrapper');
+      if (chartElement) {
+        try {
+          // Usar html2canvas para capturar la gráfica
+          const html2canvas = await import('html2canvas');
+          const canvas = await html2canvas.default(chartElement, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+            logging: false
+          });
+          
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = 170;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          
+          doc.setFontSize(14);
+          doc.setTextColor(40, 40, 40);
+          doc.text('Visualización de Datos', 20, currentY);
+          currentY += 10;
+          
+          doc.addImage(imgData, 'PNG', 20, currentY, imgWidth, imgHeight);
+          currentY += imgHeight + 15;
+        } catch (error) {
+          console.warn('No se pudo capturar la gráfica, generando representación alternativa');
+          // Generar representación alternativa de la gráfica
+          currentY = generateAlternativeChart(doc, data, currentY);
+        }
+      } else {
+        // Generar representación alternativa si no se encuentra el elemento
+        currentY = generateAlternativeChart(doc, data, currentY);
+      }
+      
+      // Resumen de estadísticas
+      doc.setFontSize(14);
+      doc.setTextColor(40, 40, 40);
+      doc.text('Resumen de Estadísticas', 20, currentY);
+      currentY += 10;
+      
+      if (reportType === 'cross-check') {
+        const tableData = [
+          ['Total de Registros', stats.total.toString()],
+          ['Con Coincidencia', stats.coincidencias.toString()],
+          ['Sin Coincidencia', (stats.total - stats.coincidencias).toString()],
+          ['Porcentaje de Coincidencia', `${stats.porcentaje}%`]
+        ];
+        
+        doc.autoTable({
+          head: [['Métrica', 'Valor']],
+          body: tableData,
+          startY: currentY,
+          styles: { fontSize: 10, cellPadding: 3 },
+          headStyles: { fillColor: [66, 139, 202], textColor: 255 },
+          margin: { left: 20, right: 20 }
+        });
+      } else {
+        const tableData = [
+          ['Cumplimiento Promedio', '94%'],
+          ['Auditorías Completadas', '142'],
+          ['Incidencias Pendientes', '8'],
+          ['Calificación Promedio', '4.7']
+        ];
+        
+        doc.autoTable({
+          head: [['Métrica', 'Valor']],
+          body: tableData,
+          startY: currentY,
+          styles: { fontSize: 10, cellPadding: 3 },
+          headStyles: { fillColor: [66, 139, 202], textColor: 255 },
+          margin: { left: 20, right: 20 }
+        });
+      }
+      
+      // Pie de página
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Página ${i} de ${pageCount} - AudiconFlow Visualización`,
+          doc.internal.pageSize.width - 20,
+          doc.internal.pageSize.height - 10,
+          { align: 'right' }
+        );
+      }
+      
+      // Descargar PDF
+      doc.save(`${fileName}.pdf`);
+      
+    } catch (error) {
+      console.error('Error generando PDF de visualización:', error);
+      throw error;
+    }
+  };
+
+  const generateAlternativeChart = (doc, data, startY) => {
+    const { stats, chartType } = data.data;
+    
+    doc.setFontSize(14);
+    doc.setTextColor(40, 40, 40);
+    doc.text('Visualización de Datos', 20, startY);
+    startY += 10;
+    
+    if (chartType === 'pie') {
+      // Representación alternativa para gráfico circular
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Gráfico Circular - ${selectedMetric}`, 20, startY);
+      startY += 10;
+      
+      if (reportType === 'cross-check') {
+        // Dibujar representación simple del gráfico circular
+        const centerX = 105;
+        const centerY = startY + 30;
+        const radius = 25;
+        
+        // Calcular ángulos
+        const matchAngle = (stats.coincidencias / stats.total) * 360;
+        
+        // Sector de coincidencias (verde)
+        doc.setFillColor(76, 175, 80);
+        doc.circle(centerX, centerY, radius, 'F');
+        
+        // Sector sin coincidencias (rojo) - simplificado como rectángulo
+        if (stats.total - stats.coincidencias > 0) {
+          doc.setFillColor(244, 67, 54);
+          doc.rect(centerX, centerY - radius, radius, radius * 2, 'F');
+        }
+        
+        // Leyenda
+        doc.setFontSize(8);
+        doc.setTextColor(76, 175, 80);
+        doc.text(`■ Con Coincidencia: ${stats.coincidencias} (${stats.porcentaje}%)`, 20, startY + 70);
+        doc.setTextColor(244, 67, 54);
+        doc.text(`■ Sin Coincidencia: ${stats.total - stats.coincidencias}`, 20, startY + 75);
+        
+        startY += 85;
+      }
+    } else {
+      // Representación alternativa para gráfico de barras
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Gráfico de Barras - ${selectedMetric}`, 20, startY);
+      startY += 15;
+      
+      if (reportType === 'cross-check') {
+        const barWidth = 30;
+        const maxBarHeight = 40;
+        const barSpacing = 50;
+        
+        // Barra de coincidencias
+        const matchHeight = (stats.coincidencias / stats.total) * maxBarHeight;
+        doc.setFillColor(76, 175, 80);
+        doc.rect(30, startY + maxBarHeight - matchHeight, barWidth, matchHeight, 'F');
+        doc.setFontSize(8);
+        doc.setTextColor(60, 60, 60);
+        doc.text('Coincidencias', 25, startY + maxBarHeight + 8);
+        doc.text(stats.coincidencias.toString(), 35, startY + maxBarHeight + 13);
+        
+        // Barra sin coincidencias
+        const noMatchHeight = ((stats.total - stats.coincidencias) / stats.total) * maxBarHeight;
+        doc.setFillColor(244, 67, 54);
+        doc.rect(30 + barSpacing, startY + maxBarHeight - noMatchHeight, barWidth, noMatchHeight, 'F');
+        doc.text('Sin Coincidencias', 70, startY + maxBarHeight + 8);
+        doc.text((stats.total - stats.coincidencias).toString(), 85, startY + maxBarHeight + 13);
+        
+        startY += maxBarHeight + 20;
+      }
+    }
+    
+    return startY;
   };
 
   const renderChart = () => {
@@ -301,7 +542,7 @@ const VisualizationArea = ({ reportData, reportType }) => {
             placeholder="Tipo de gráfico"
             className="w-48"
           />
-          <Button variant="outline" size="sm" iconName="Download">
+          <Button variant="outline" size="sm" iconName="Download" onClick={handleExportVisualization}>
             Exportar
           </Button>
         </div>

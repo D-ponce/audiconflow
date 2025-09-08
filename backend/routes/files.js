@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import { GridFSBucket } from 'mongodb';
+import AuditActionLog from '../models/AuditActionLog.js';
 
 const router = express.Router();
 

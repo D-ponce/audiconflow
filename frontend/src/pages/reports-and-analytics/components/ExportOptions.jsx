@@ -183,14 +183,14 @@ const ExportOptions = ({ onExport }) => {
         
         // Verificar conexión antes de enviar
         try {
-          const testResponse = await fetch('http://localhost:50001/api/reports', {
+          const testResponse = await fetch('http://localhost:5000/api/reports', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
           });
           console.log('🔍 Test de conexión:', testResponse.status, testResponse.statusText);
         } catch (connectionError) {
           console.error('❌ Error de conexión al backend:', connectionError);
-          throw new Error('Backend no disponible en puerto 50001. Asegúrate de que el servidor esté corriendo.');
+          throw new Error('Backend no disponible en puerto 5000. Asegúrate de que el servidor esté corriendo.');
         }
         
         const savedReport = await reportService.createReport(dbReportData);
